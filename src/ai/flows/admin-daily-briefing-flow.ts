@@ -131,7 +131,7 @@ const adminDailyBriefingFlow = ai.defineFlow(
   },
   async input => {
     let attempts = 0;
-    const maxAttempts = 3;
+    const maxAttempts = 5;
     
     while (attempts < maxAttempts) {
       try {
@@ -141,19 +141,20 @@ const adminDailyBriefingFlow = ai.defineFlow(
       } catch (error: any) {
         attempts++;
         const errorMessage = error.message?.toLowerCase() || '';
-        const isTransient = 
-          errorMessage.includes('503') || 
-          errorMessage.includes('429') || 
-          errorMessage.includes('high demand') || 
-          errorMessage.includes('quota exceeded') ||
-          errorMessage.includes('resource_exhausted');
+        const isRateLimit = errorMessage.includes('429') || errorMessage.includes('quota exceeded') || errorMessage.includes('resource_exhausted');
+        const isTransient = errorMessage.includes('503') || errorMessage.includes('high demand') || isRateLimit;
         
         if (attempts >= maxAttempts || !isTransient) {
-          throw error;
+          // If we give up, throw a clean error message for the UI
+          if (isRateLimit) {
+            throw new Error('AI Briefing is temporarily unavailable due to high demand. Please try again in 30 seconds.');
+          }
+          throw new Error('AI service is currently experiencing technical difficulties. Please refresh or try again later.');
         }
         
-        // Wait with exponential backoff (2s, 4s)
-        await new Promise(resolve => setTimeout(resolve, attempts * 2000));
+        // Wait with exponential backoff. For rate limits, we wait longer.
+        const baseDelay = isRateLimit ? 5000 : 2000;
+        await new Promise(resolve => setTimeout(resolve, attempts * baseDelay));
       }
     }
     throw new Error('AI service is currently unavailable. Please try again in a moment.');

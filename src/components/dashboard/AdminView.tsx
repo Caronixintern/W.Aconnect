@@ -79,11 +79,11 @@ export function AdminView({ users, leaveRequests, tasks, attendance, onUpdateLea
       });
       setBriefing(result);
     } catch (error: any) {
-      console.error("Briefing failed", error);
+      // Catch specific errors thrown by the flow and display them gracefully
       toast({
         variant: "destructive",
-        title: "AI Briefing Unavailable",
-        description: error.message || "The AI service is experiencing high demand. Please try again in a few moments.",
+        title: "Briefing Service Busy",
+        description: error.message || "The AI intelligence engine is currently at capacity. Please try again in a moment.",
       });
     } finally {
       setIsGeneratingBriefing(false);
