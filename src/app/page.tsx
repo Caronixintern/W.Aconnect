@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react";
@@ -17,7 +16,7 @@ import { doc, setDoc } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 
 export default function Home() {
-  const { auth } = useAuth();
+  const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
 
@@ -43,7 +42,7 @@ export default function Home() {
     requestLeave 
   } = useOfficeData();
 
-  const handleAuth = async (mode: 'signin' | 'signup', role: 'employee' | 'admin') => {
+  const handleAuth = (mode: 'signin' | 'signup', role: 'employee' | 'admin') => {
     if (!email || !password) {
       toast({ title: "Error", description: "Please enter email and password.", variant: "destructive" });
       return;
@@ -52,11 +51,7 @@ export default function Home() {
     setIsProcessing(true);
     try {
       if (mode === 'signup') {
-        // For the sake of the prototype, we create the profile after sign up
-        // In a real app, this might be handled by a cloud function or separate step
-        const userCredential = await initiateEmailSignUp(auth, email, password);
-        // Note: initiateEmailSignUp is non-blocking per guidelines, but here we might need to await to create profile
-        // However, I will follow the non-blocking pattern and rely on the provider
+        initiateEmailSignUp(auth, email, password);
       } else {
         initiateEmailSignIn(auth, email, password);
       }
