@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, use } from "react";
@@ -27,8 +28,8 @@ import { toast } from "@/hooks/use-toast";
 import Image from "next/image";
 
 export default function Home(props: { params: Promise<any>; searchParams: Promise<any> }) {
-  use(props.params);
-  use(props.searchParams);
+  const params = use(props.params);
+  const searchParams = use(props.searchParams);
 
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
@@ -40,6 +41,7 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
   const [name, setName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Pre-fill admin credentials when in admin login mode
   useEffect(() => {
     if (authMode === 'admin-login') {
       setEmail('qwer@gmail.com');
@@ -47,12 +49,23 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
     }
   }, [authMode]);
 
+  // Robust Admin identification
+  const isAdminEmail = (emailStr?: string | null) => {
+    if (!emailStr) return false;
+    const lowerEmail = emailStr.toLowerCase();
+    return lowerEmail === 'qwer@gmail.com' || lowerEmail === 'wonderlightadventure@gmail.com';
+  };
+
+  const isAdminAccount = isAdminEmail(user?.email);
+
+  // Profile references
   const adminProfileRef = useMemoFirebase(() => user ? doc(db, 'admins', user.uid) : null, [db, user]);
   const employeeProfileRef = useMemoFirebase(() => user ? doc(db, 'employees', user.uid) : null, [db, user]);
   
   const { data: adminProfile, isLoading: isAdminLoading } = useDoc(adminProfileRef);
   const { data: employeeProfile, isLoading: isEmployeeLoading } = useDoc(employeeProfileRef);
 
+  // Global data queries for Admin
   const employeesQuery = useMemoFirebase(() => user ? query(collection(db, 'employees')) : null, [db, user]);
   const adminsQuery = useMemoFirebase(() => user ? query(collection(db, 'admins')) : null, [db, user]);
   const allLeavesQuery = useMemoFirebase(() => user ? query(collection(db, 'leaveRequests')) : null, [db, user]);
@@ -71,6 +84,7 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
       toast({ title: "Error", description: "Please enter email and password.", variant: "destructive" });
       return;
     }
+    
     if (mode === 'signup' && !name) {
       toast({ title: "Error", description: "Please enter your full name.", variant: "destructive" });
       return;
@@ -83,26 +97,27 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
 
     authPromise
       .then((userCredential) => {
-        const isAdminAccount = targetEmail === 'qwer@gmail.com' || targetEmail === 'wonderlightadventure@gmail.com';
-        if (mode === 'signup' || (mode === 'signin' && (role === 'admin' || isAdminAccount))) {
-          const names = name.split(' ');
-          const profileData = {
-            id: userCredential.user.uid,
-            firstName: names[0] || (isAdminAccount ? 'Executive' : 'Employee'),
-            lastName: names.slice(1).join(' ') || (isAdminAccount ? 'Admin' : 'User'),
-            email: targetEmail,
-            phoneNumber: '',
-            ...(isAdminAccount ? {} : {
-              employeeNumber: `EMP-${Math.floor(Math.random() * 10000)}`,
-              dateOfJoining: new Date().toISOString().split('T')[0],
-              leaveBalance: 0,
-              teamId: 'General'
-            })
-          };
+        const isTargetAdmin = isAdminEmail(targetEmail);
+        
+        // Sync profile to Firestore if new or explicitly requested
+        const names = name.split(' ');
+        const profileData = {
+          id: userCredential.user.uid,
+          firstName: names[0] || (isTargetAdmin ? 'Executive' : 'Employee'),
+          lastName: names.slice(1).join(' ') || (isTargetAdmin ? 'Admin' : 'User'),
+          email: targetEmail,
+          phoneNumber: '',
+          ...(isTargetAdmin ? {} : {
+            employeeNumber: `EMP-${Math.floor(Math.random() * 10000)}`,
+            dateOfJoining: new Date().toISOString().split('T')[0],
+            leaveBalance: 0,
+            teamId: 'General'
+          })
+        };
 
-          const collectionName = isAdminAccount ? 'admins' : 'employees';
-          setDocumentNonBlocking(doc(db, collectionName, userCredential.user.uid), profileData, { merge: true });
-        }
+        const collectionName = isTargetAdmin ? 'admins' : 'employees';
+        setDocumentNonBlocking(doc(db, collectionName, userCredential.user.uid), profileData, { merge: true });
+        
         setIsProcessing(false);
       })
       .catch((error: any) => {
@@ -162,8 +177,6 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
     setDocumentNonBlocking(doc(db, 'leaveRequests', leaveId), fullLeave, { merge: true });
     setDocumentNonBlocking(doc(db, 'employees', user?.uid!, 'leaveRequests', leaveId), fullLeave, { merge: true });
   };
-
-  const isAdminAccount = user?.email === 'qwer@gmail.com' || user?.email === 'wonderlightadventure@gmail.com';
 
   if (isUserLoading || (user && !isAdminAccount && (isAdminLoading || isEmployeeLoading))) {
     return (
