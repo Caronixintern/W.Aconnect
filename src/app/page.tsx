@@ -67,7 +67,7 @@ export default function Home() {
             employeeNumber: `EMP-${Math.floor(Math.random() * 10000)}`,
             email: email,
             dateOfJoining: new Date().toISOString().split('T')[0],
-            leaveBalance: 15,
+            leaveBalance: 0,
             teamId: 'General'
           } : {
             id: userCredential.user.uid,

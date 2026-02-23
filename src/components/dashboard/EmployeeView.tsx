@@ -165,11 +165,11 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
               <div className="grid grid-cols-2 gap-4 w-full md:w-auto">
                 <div className="bg-primary/5 rounded-xl p-3 border border-primary/10">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Leave Balance</p>
-                  <p className="text-xl font-bold text-primary">12 Days</p>
+                  <p className="text-xl font-bold text-primary">0 Days</p>
                 </div>
                 <div className="bg-accent/10 rounded-xl p-3 border border-accent/20">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Attendance</p>
-                  <p className="text-xl font-bold text-accent-foreground">98%</p>
+                  <p className="text-xl font-bold text-accent-foreground">0%</p>
                 </div>
               </div>
             </div>
