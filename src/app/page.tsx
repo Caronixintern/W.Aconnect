@@ -28,8 +28,8 @@ import { toast } from "@/hooks/use-toast";
 import Image from "next/image";
 
 export default function Home(props: { params: Promise<any>; searchParams: Promise<any> }) {
-  const params = use(props.params);
-  const searchParams = use(props.searchParams);
+  const unwrappedParams = use(props.params);
+  const unwrappedSearchParams = use(props.searchParams);
 
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
@@ -114,6 +114,7 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
           lastName: names.slice(1).join(' ') || (isTargetAdmin ? 'Admin' : 'User'),
           email: targetEmail,
           phoneNumber: '',
+          avatarUrl: `https://picsum.photos/seed/${userCredential.user.uid}/200/200`,
           ...(isTargetAdmin ? {} : {
             employeeNumber: `EMP-${Math.floor(Math.random() * 10000)}`,
             dateOfJoining: new Date().toISOString().split('T')[0],
@@ -195,20 +196,30 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
 
   if (user) {
     const isActuallyAdmin = !!adminProfile || isAdminAccount;
+    const profile = isActuallyAdmin ? adminProfile : employeeProfile;
+    
     const currentUser: AppUser = {
       id: user.uid,
-      name: adminProfile ? `${adminProfile.firstName} ${adminProfile.lastName}` : (employeeProfile ? `${employeeProfile.firstName} ${employeeProfile.lastName}` : user.email?.split('@')[0] || 'User'),
+      name: profile ? `${profile.firstName} ${profile.lastName}` : (user.email?.split('@')[0] || 'User'),
       email: user.email || '',
-      phone: adminProfile?.phoneNumber || employeeProfile?.phoneNumber || '',
+      phone: profile?.phoneNumber || '',
       role: isActuallyAdmin ? 'admin' : 'employee',
-      team: employeeProfile?.teamId || (isActuallyAdmin ? 'Executive' : 'General'),
-      avatarUrl: `https://picsum.photos/seed/${user.uid}/200/200`,
-      employeeNumber: employeeProfile?.employeeNumber || '',
-      dateOfJoining: employeeProfile?.dateOfJoining || ''
+      team: (profile as any)?.teamId || (isActuallyAdmin ? 'Executive' : 'General'),
+      avatarUrl: profile?.avatarUrl || `https://picsum.photos/seed/${user.uid}/200/200`,
+      employeeNumber: (profile as any)?.employeeNumber || '',
+      dateOfJoining: (profile as any)?.dateOfJoining || ''
     };
 
     const allUsers: AppUser[] = [
-      ...(adminsData || []).map(a => ({ id: a.id, name: `${a.firstName} ${a.lastName}`, email: a.email, role: 'admin' as const, team: 'Executive', phone: a.phoneNumber || '' })),
+      ...(adminsData || []).map(a => ({ 
+        id: a.id, 
+        name: `${a.firstName} ${a.lastName}`, 
+        email: a.email, 
+        role: 'admin' as const, 
+        team: 'Executive', 
+        phone: a.phoneNumber || '',
+        avatarUrl: a.avatarUrl || `https://picsum.photos/seed/${a.id}/200/200`
+      })),
       ...(employeesData || []).map(e => ({ 
         id: e.id, 
         name: `${e.firstName} ${e.lastName}`, 
@@ -217,7 +228,8 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
         team: e.teamId || 'General', 
         phone: e.phoneNumber || '',
         employeeNumber: e.employeeNumber,
-        dateOfJoining: e.dateOfJoining
+        dateOfJoining: e.dateOfJoining,
+        avatarUrl: e.avatarUrl || `https://picsum.photos/seed/${e.id}/200/200`
       }))
     ];
 

@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react";
@@ -10,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Clock, ClipboardList, Send, Briefcase, Mail, Phone, Hash, UserCog, Check, X, LogOut } from "lucide-react";
+import { Calendar, Clock, ClipboardList, Send, Briefcase, Mail, Phone, Hash, UserCog, Check, X, LogOut, Image as ImageIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
@@ -33,7 +34,8 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
     phone: user.phone,
     team: user.team,
     employeeNumber: user.employeeNumber || '',
-    dateOfJoining: user.dateOfJoining || ''
+    dateOfJoining: user.dateOfJoining || '',
+    avatarUrl: user.avatarUrl || ''
   });
 
   const [leaveForm, setLeaveForm] = useState({
@@ -51,7 +53,8 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
         phone: user.phone,
         team: user.team,
         employeeNumber: user.employeeNumber || '',
-        dateOfJoining: user.dateOfJoining || ''
+        dateOfJoining: user.dateOfJoining || '',
+        avatarUrl: user.avatarUrl || ''
       });
     }
   }, [user, isEditingProfile]);
@@ -103,20 +106,26 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
     const firstName = names[0] || 'User';
     const lastName = names.slice(1).join(' ') || '';
 
-    const employeeRef = doc(db, 'employees', user.id);
+    const isUserAdmin = user.role === 'admin';
+    const collectionName = isUserAdmin ? 'admins' : 'employees';
+    const profileRef = doc(db, collectionName, user.id);
+    
     const updatedData = {
       id: user.id,
       firstName,
       lastName,
       email: user.email,
       phoneNumber: profileForm.phone,
-      teamId: profileForm.team,
-      employeeNumber: profileForm.employeeNumber,
-      dateOfJoining: profileForm.dateOfJoining,
-      leaveBalance: 0 
+      avatarUrl: profileForm.avatarUrl,
+      ...(isUserAdmin ? {} : {
+        teamId: profileForm.team,
+        employeeNumber: profileForm.employeeNumber,
+        dateOfJoining: profileForm.dateOfJoining,
+        leaveBalance: 0 
+      })
     };
 
-    setDocumentNonBlocking(employeeRef, updatedData, { merge: true });
+    setDocumentNonBlocking(profileRef, updatedData, { merge: true });
     
     setIsEditingProfile(false);
     toast({ title: "Profile Updated", description: "The professional profile has been synchronized with the executive database." });
@@ -129,7 +138,7 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
           <div className="h-32 gold-gradient relative">
             <div className="absolute -bottom-12 left-8">
               <div className="p-1 bg-white rounded-2xl luxury-shadow">
-                <div className="w-24 h-24 rounded-xl overflow-hidden">
+                <div className="w-24 h-24 rounded-xl overflow-hidden relative">
                   <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
                 </div>
               </div>
@@ -172,14 +181,28 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
               <div className="space-y-1 w-full max-w-md">
                 {isEditingProfile ? (
-                  <div className="space-y-2">
-                    <Label className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest">Full Name</Label>
-                    <Input 
-                      value={profileForm.name} 
-                      onChange={e => setProfileForm({...profileForm, name: e.target.value})}
-                      className="text-xl font-bold h-11 w-full bg-white/50"
-                      placeholder="e.g. Julian Sterling"
-                    />
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest">Full Name</Label>
+                      <Input 
+                        value={profileForm.name} 
+                        onChange={e => setProfileForm({...profileForm, name: e.target.value})}
+                        className="text-xl font-bold h-11 w-full bg-white/50"
+                        placeholder="e.g. Julian Sterling"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest">Profile Image URL</Label>
+                      <div className="relative">
+                        <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                          value={profileForm.avatarUrl} 
+                          onChange={e => setProfileForm({...profileForm, avatarUrl: e.target.value})}
+                          className="pl-10 h-10 w-full bg-white/50 text-sm"
+                          placeholder="https://example.com/photo.jpg"
+                        />
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <h1 className="text-3xl font-bold tracking-tight text-primary">{user.name}</h1>
@@ -201,7 +224,7 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
                   {!isEditingProfile && (
                     <>
                       <span className="mx-1">•</span>
-                      <Badge variant="outline" className="text-primary border-primary/20">Active Employee</Badge>
+                      <Badge variant="outline" className="text-primary border-primary/20">Active {user.role === 'admin' ? 'Executive' : 'Employee'}</Badge>
                     </>
                   )}
                 </div>

@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Employee": {
@@ -43,6 +44,10 @@
         "teamId": {
           "type": "string",
           "description": "Reference to the Team this employee belongs to. (Relationship: Team 1:N Employee)"
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "URL to the employee's profile picture."
         }
       },
       "required": [
@@ -82,6 +87,10 @@
         "phoneNumber": {
           "type": "string",
           "description": "The contact phone number of the administrator."
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "URL to the administrator's profile picture."
         }
       },
       "required": [
