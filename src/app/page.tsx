@@ -1,23 +1,37 @@
 
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { AppNavbar } from "@/components/layout/AppNavbar";
 import { EmployeeView } from "@/components/dashboard/EmployeeView";
 import { AdminView } from "@/components/dashboard/AdminView";
-import { useOfficeData } from "@/hooks/use-office-data";
-import { User as AppUser } from "@/lib/types";
+import { User as AppUser, LeaveRequest, Task, AttendanceRecord } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, UserCircle2, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
-import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase, initiateEmailSignUp, initiateEmailSignIn, setDocumentNonBlocking } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { ShieldCheck, UserCircle2, ArrowRight, ArrowLeft, Loader2, Sparkles } from "lucide-react";
+import { 
+  useAuth, 
+  useUser, 
+  useFirestore, 
+  useDoc, 
+  useCollection,
+  useMemoFirebase, 
+  initiateEmailSignUp, 
+  initiateEmailSignIn, 
+  setDocumentNonBlocking,
+  updateDocumentNonBlocking
+} from "@/firebase";
+import { doc, collection, query, where, serverTimestamp } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 import Image from "next/image";
 
-export default function Home() {
+export default function Home(props: { params: Promise<any>; searchParams: Promise<any> }) {
+  // Unwrap Next.js 15 params/searchParams to avoid "enumerated" errors
+  use(props.params);
+  use(props.searchParams);
+
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
@@ -39,22 +53,25 @@ export default function Home() {
     }
   }, [authMode]);
 
-  // Check if current user is admin or employee
-  const adminRef = useMemoFirebase(() => user ? doc(db, 'admins', user.uid) : null, [db, user]);
-  const employeeRef = useMemoFirebase(() => user ? doc(db, 'employees', user.uid) : null, [db, user]);
+  // Real-time data from Firestore
+  const adminProfileRef = useMemoFirebase(() => user ? doc(db, 'admins', user.uid) : null, [db, user]);
+  const employeeProfileRef = useMemoFirebase(() => user ? doc(db, 'employees', user.uid) : null, [db, user]);
   
-  const { data: adminProfile, isLoading: isAdminLoading } = useDoc(adminRef);
-  const { data: employeeProfile, isLoading: isEmployeeLoading } = useDoc(employeeRef);
+  const { data: adminProfile, isLoading: isAdminLoading } = useDoc(adminProfileRef);
+  const { data: employeeProfile, isLoading: isEmployeeLoading } = useDoc(employeeProfileRef);
 
-  const { 
-    users,
-    leaveRequests, 
-    tasks, 
-    attendance, 
-    updateLeaveStatus, 
-    assignTask, 
-    requestLeave 
-  } = useOfficeData();
+  // Global collections for admin overview
+  const employeesQuery = useMemoFirebase(() => query(collection(db, 'employees')), [db]);
+  const adminsQuery = useMemoFirebase(() => query(collection(db, 'admins')), [db]);
+  const allLeavesQuery = useMemoFirebase(() => query(collection(db, 'leaveRequests')), [db]);
+  const allTasksQuery = useMemoFirebase(() => query(collection(db, 'tasks')), [db]);
+  const allAttendanceQuery = useMemoFirebase(() => query(collection(db, 'attendance')), [db]);
+
+  const { data: employeesData } = useCollection(employeesQuery);
+  const { data: adminsData } = useCollection(adminsQuery);
+  const { data: leavesData } = useCollection(allLeavesQuery);
+  const { data: tasksData } = useCollection(allTasksQuery);
+  const { data: attendanceData } = useCollection(allAttendanceQuery);
 
   const handleAuth = (mode: 'signin' | 'signup', role: 'employee' | 'admin') => {
     if (!email || !password) {
@@ -73,7 +90,6 @@ export default function Home() {
 
     authPromise
       .then((userCredential) => {
-        // For the specific admin email or any signup, ensure the record exists in the database
         if (mode === 'signup' || (mode === 'signin' && role === 'admin' && email === 'qwer@gmail.com')) {
           const profileData = role === 'employee' ? {
             id: userCredential.user.uid,
@@ -111,6 +127,35 @@ export default function Home() {
     setName('');
   };
 
+  const updateLeaveStatus = (id: string, status: 'approved' | 'rejected') => {
+    // In a real app, you'd update both the global and employee-specific subcollection
+    // For this MVP, we update the global one
+    updateDocumentNonBlocking(doc(db, 'leaveRequests', id), { status });
+    toast({ title: "Status Updated", description: `Request has been ${status}.` });
+  };
+
+  const assignTask = (taskData: any) => {
+    const taskId = `task-${Date.now()}`;
+    const taskRef = doc(db, 'tasks', taskId);
+    setDocumentNonBlocking(taskRef, {
+      ...taskData,
+      id: taskId,
+      status: 'todo',
+      assignmentDate: new Date().toISOString()
+    }, { merge: true });
+  };
+
+  const requestLeave = (leaveData: any) => {
+    const leaveId = `leave-${Date.now()}`;
+    const leaveRef = doc(db, 'leaveRequests', leaveId);
+    setDocumentNonBlocking(leaveRef, {
+      ...leaveData,
+      id: leaveId,
+      status: 'pending',
+      requestDate: new Date().toISOString()
+    }, { merge: true });
+  };
+
   if (isUserLoading || (user && (isAdminLoading || isEmployeeLoading))) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -120,7 +165,6 @@ export default function Home() {
   }
 
   if (user) {
-    // If the user is the designated admin email, they are an admin even if the profile is still loading/missing
     const isActuallyAdmin = !!adminProfile || user.email === 'qwer@gmail.com';
     
     const currentUser: AppUser = {
@@ -133,6 +177,28 @@ export default function Home() {
       avatarUrl: `https://picsum.photos/seed/${user.uid}/200/200`
     };
 
+    // Prepare data for views
+    const allUsers: AppUser[] = [
+      ...(adminsData || []).map(a => ({ id: a.id, name: `${a.firstName} ${a.lastName}`, email: a.email, role: 'admin' as const, team: 'Executive', phone: a.phoneNumber || '' })),
+      ...(employeesData || []).map(e => ({ id: e.id, name: `${e.firstName} ${e.lastName}`, email: e.email, role: 'employee' as const, team: e.teamId || 'General', phone: e.phoneNumber || '' }))
+    ];
+
+    const allLeaves: any[] = (leavesData || []).map(l => ({
+      ...l,
+      employeeName: allUsers.find(u => u.id === l.employeeId)?.name || 'Unknown'
+    }));
+
+    const allTasks: any[] = (tasksData || []).map(t => ({
+      ...t,
+      assignedToName: allUsers.find(u => u.id === t.assignedToEmployeeId)?.name || 'Unknown'
+    }));
+
+    const allAttendance: any[] = (attendanceData || []).map(a => ({
+      ...a,
+      employeeName: allUsers.find(u => u.id === a.employeeId)?.name || 'Unknown',
+      clockIn: a.checkInTime ? new Date(a.checkInTime).toLocaleTimeString() : 'N/A'
+    }));
+
     return (
       <div className="min-h-screen bg-background text-foreground pb-20">
         <AppNavbar currentUser={currentUser} onLogout={handleSignOut} />
@@ -140,19 +206,19 @@ export default function Home() {
         <main className="container mx-auto px-4 pt-24 pb-12 max-w-7xl">
           {currentUser.role === 'admin' ? (
             <AdminView 
-              users={users} 
-              leaveRequests={leaveRequests} 
-              tasks={tasks} 
-              attendance={attendance}
+              users={allUsers} 
+              leaveRequests={allLeaves} 
+              tasks={allTasks} 
+              attendance={allAttendance}
               onUpdateLeave={updateLeaveStatus}
               onAssignTask={assignTask}
             />
           ) : (
             <EmployeeView 
               user={currentUser} 
-              attendance={attendance} 
-              tasks={tasks} 
-              leaveRequests={leaveRequests}
+              attendance={allAttendance} 
+              tasks={allTasks} 
+              leaveRequests={allLeaves}
               onRequestLeave={requestLeave}
             />
           )}
