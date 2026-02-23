@@ -410,10 +410,10 @@ export function AdminView({ currentUser, users, leaveRequests, tasks, attendance
                         <div className="space-y-4">
                           <div className="space-y-2">
                             <Label className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest">Executive Name</Label>
-                            <Input 
+                            <input 
                               value={profileForm.name} 
                               onChange={e => setProfileForm({...profileForm, name: e.target.value})}
-                              className="text-xl font-bold h-11 bg-white/50"
+                              className="text-xl font-bold h-11 w-full bg-white/50 border rounded-md px-3"
                             />
                           </div>
                           <div className="space-y-2">
