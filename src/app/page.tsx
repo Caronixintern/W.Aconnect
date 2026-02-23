@@ -60,12 +60,12 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
   const { data: adminProfile, isLoading: isAdminLoading } = useDoc(adminProfileRef);
   const { data: employeeProfile, isLoading: isEmployeeLoading } = useDoc(employeeProfileRef);
 
-  // Global collections for admin overview
-  const employeesQuery = useMemoFirebase(() => query(collection(db, 'employees')), [db]);
-  const adminsQuery = useMemoFirebase(() => query(collection(db, 'admins')), [db]);
-  const allLeavesQuery = useMemoFirebase(() => query(collection(db, 'leaveRequests')), [db]);
-  const allTasksQuery = useMemoFirebase(() => query(collection(db, 'tasks')), [db]);
-  const allAttendanceQuery = useMemoFirebase(() => query(collection(db, 'attendance')), [db]);
+  // Global collections for admin overview - Guarded by user presence to avoid permission errors when auth is null
+  const employeesQuery = useMemoFirebase(() => user ? query(collection(db, 'employees')) : null, [db, user]);
+  const adminsQuery = useMemoFirebase(() => user ? query(collection(db, 'admins')) : null, [db, user]);
+  const allLeavesQuery = useMemoFirebase(() => user ? query(collection(db, 'leaveRequests')) : null, [db, user]);
+  const allTasksQuery = useMemoFirebase(() => user ? query(collection(db, 'tasks')) : null, [db, user]);
+  const allAttendanceQuery = useMemoFirebase(() => user ? query(collection(db, 'attendance')) : null, [db, user]);
 
   const { data: employeesData } = useCollection(employeesQuery);
   const { data: adminsData } = useCollection(adminsQuery);
@@ -128,8 +128,6 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
   };
 
   const updateLeaveStatus = (id: string, status: 'approved' | 'rejected') => {
-    // In a real app, you'd update both the global and employee-specific subcollection
-    // For this MVP, we update the global one
     updateDocumentNonBlocking(doc(db, 'leaveRequests', id), { status });
     toast({ title: "Status Updated", description: `Request has been ${status}.` });
   };
