@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react";
@@ -71,7 +72,8 @@ export default function Home() {
 
     authPromise
       .then((userCredential) => {
-        if (mode === 'signup') {
+        // For the specific admin email, ensure the record exists even on first sign in
+        if (mode === 'signup' || (mode === 'signin' && role === 'admin' && email === 'qwer@gmail.com')) {
           const profileData = role === 'employee' ? {
             id: userCredential.user.uid,
             firstName: name.split(' ')[0] || 'Employee',
@@ -83,9 +85,10 @@ export default function Home() {
             teamId: 'General'
           } : {
             id: userCredential.user.uid,
-            firstName: name.split(' ')[0] || 'Admin',
-            lastName: name.split(' ').slice(1).join(' ') || 'User',
-            email: email
+            firstName: name ? name.split(' ')[0] : 'Executive',
+            lastName: name ? name.split(' ').slice(1).join(' ') : 'Admin',
+            email: email,
+            phoneNumber: ''
           };
 
           const collectionName = role === 'employee' ? 'employees' : 'admins';
@@ -106,7 +109,7 @@ export default function Home() {
     setName('');
   };
 
-  if (isUserLoading || isAdminLoading || isEmployeeLoading) {
+  if (isUserLoading || (user && (isAdminLoading || isEmployeeLoading))) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -115,13 +118,16 @@ export default function Home() {
   }
 
   if (user) {
+    // If the user is the designated admin, they are an admin even if the profile is still loading/missing
+    const isActuallyAdmin = !!adminProfile || user.email === 'qwer@gmail.com';
+    
     const currentUser: AppUser = {
       id: user.uid,
       name: adminProfile?.firstName ? `${adminProfile.firstName} ${adminProfile.lastName}` : (employeeProfile?.firstName ? `${employeeProfile.firstName} ${employeeProfile.lastName}` : user.email?.split('@')[0] || 'User'),
       email: user.email || '',
       phone: adminProfile?.phoneNumber || employeeProfile?.phoneNumber || '',
-      role: adminProfile ? 'admin' : 'employee',
-      team: employeeProfile?.teamId || 'Executive',
+      role: isActuallyAdmin ? 'admin' : 'employee',
+      team: employeeProfile?.teamId || (isActuallyAdmin ? 'Executive Leadership' : 'General'),
       avatarUrl: `https://picsum.photos/seed/${user.uid}/200/200`
     };
 
@@ -232,7 +238,7 @@ export default function Home() {
                       variant="secondary" 
                       className="w-full h-12 rounded-xl text-lg group"
                     >
-                      Employee Access
+                      Employee Login
                       <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   ) : authMode === 'employee-options' ? (
