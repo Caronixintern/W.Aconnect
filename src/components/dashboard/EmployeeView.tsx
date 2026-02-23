@@ -16,13 +16,6 @@ import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
 import { doc } from "firebase/firestore";
-import { format } from "date-fns";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
 interface EmployeeViewProps {
   user: User;
@@ -185,7 +178,7 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
           </div>
           <CardContent className="pt-16 pb-8 px-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-              <div className="space-y-1 w-full max-w-md">
+              <div className="space-y-1 w-full max-md">
                 {isEditingProfile ? (
                   <div className="space-y-4">
                     <div className="space-y-2">
@@ -289,28 +282,12 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
                 <div>
                   <p className="text-xs text-muted-foreground">Joined Date</p>
                   {isEditingProfile ? (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "h-8 w-full justify-start text-left font-normal text-xs bg-white/50 mt-1",
-                            !profileForm.dateOfJoining && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-3 w-3" />
-                          {profileForm.dateOfJoining ? format(new Date(profileForm.dateOfJoining), "PPP") : <span>Pick a date</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 luxury-shadow border-primary/10" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={profileForm.dateOfJoining ? new Date(profileForm.dateOfJoining) : undefined}
-                          onSelect={(date) => setProfileForm({ ...profileForm, dateOfJoining: date ? date.toISOString().split('T')[0] : '' })}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <Input 
+                      type="date"
+                      value={profileForm.dateOfJoining}
+                      onChange={e => setProfileForm({...profileForm, dateOfJoining: e.target.value})}
+                      className="h-8 text-xs bg-white/50 mt-1"
+                    />
                   ) : (
                     <p className="font-medium">{user.dateOfJoining || 'Jan 2023'}</p>
                   )}
@@ -428,53 +405,21 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="startDate">Start Date</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !leaveForm.startDate && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {leaveForm.startDate ? format(new Date(leaveForm.startDate), "PPP") : <span>Pick a date</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 luxury-shadow border-primary/10" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={leaveForm.startDate ? new Date(leaveForm.startDate) : undefined}
-                            onSelect={(date) => setLeaveForm({ ...leaveForm, startDate: date ? date.toISOString().split('T')[0] : '' })}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <Input 
+                        id="startDate"
+                        type="date"
+                        value={leaveForm.startDate}
+                        onChange={e => setLeaveForm({...leaveForm, startDate: e.target.value})}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="endDate">End Date</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !leaveForm.endDate && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {leaveForm.endDate ? format(new Date(leaveForm.endDate), "PPP") : <span>Pick a date</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 luxury-shadow border-primary/10" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={leaveForm.endDate ? new Date(leaveForm.endDate) : undefined}
-                            onSelect={(date) => setLeaveForm({ ...leaveForm, endDate: date ? date.toISOString().split('T')[0] : '' })}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <Input 
+                        id="endDate"
+                        type="date"
+                        value={leaveForm.endDate}
+                        onChange={e => setLeaveForm({...leaveForm, endDate: e.target.value})}
+                      />
                     </div>
                   </div>
                   <div className="space-y-2">
