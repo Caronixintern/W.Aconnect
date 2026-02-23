@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, use } from "react";
@@ -61,15 +62,27 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
   const { data: adminProfile, isLoading: isAdminLoading } = useDoc(adminProfileRef);
   const { data: employeeProfile, isLoading: isEmployeeLoading } = useDoc(employeeProfileRef);
 
+  // Queries for All Users (Allowed by Rules)
   const employeesQuery = useMemoFirebase(() => user ? query(collection(db, 'employees')) : null, [db, user]);
-  const adminsQuery = useMemoFirebase(() => user ? query(collection(db, 'admins')) : null, [db, user]);
-  const allLeavesQuery = useMemoFirebase(() => user ? query(collection(db, 'leaveRequests')) : null, [db, user]);
-  const allTasksQuery = useMemoFirebase(() => user ? query(collection(db, 'tasks')) : null, [db, user]);
-
   const { data: employeesData } = useCollection(employeesQuery);
+
+  // Queries for Admins Only (Restricted by Rules)
+  const adminsQuery = useMemoFirebase(() => (user && isAdminAccount) ? query(collection(db, 'admins')) : null, [db, user, isAdminAccount]);
+  const masterLeavesQuery = useMemoFirebase(() => (user && isAdminAccount) ? query(collection(db, 'leaveRequests')) : null, [db, user, isAdminAccount]);
+  const masterTasksQuery = useMemoFirebase(() => (user && isAdminAccount) ? query(collection(db, 'tasks')) : null, [db, user, isAdminAccount]);
+
   const { data: adminsData } = useCollection(adminsQuery);
-  const { data: leavesData } = useCollection(allLeavesQuery);
-  const { data: tasksData } = useCollection(allTasksQuery);
+  const { data: masterLeaves } = useCollection(masterLeavesQuery);
+  const { data: masterTasks } = useCollection(masterTasksQuery);
+
+  // Queries for Employees Only (Own Data)
+  const employeeLeavesQuery = useMemoFirebase(() => (user && !isAdminAccount) ? query(collection(db, 'employees', user.uid, 'leaveRequests')) : null, [db, user, isAdminAccount]);
+  const employeeTasksQuery = useMemoFirebase(() => (user && !isAdminAccount) ? query(collection(db, 'employees', user.uid, 'tasks')) : null, [db, user, isAdminAccount]);
+  const employeeAttendanceQuery = useMemoFirebase(() => (user && !isAdminAccount) ? query(collection(db, 'employees', user.uid, 'attendance')) : null, [db, user, isAdminAccount]);
+
+  const { data: employeeLeaves } = useCollection(employeeLeavesQuery);
+  const { data: employeeTasks } = useCollection(employeeTasksQuery);
+  const { data: employeeAttendance } = useCollection(employeeAttendanceQuery);
 
   const handleAuth = (mode: 'signin' | 'signup', role: 'employee' | 'admin') => {
     const targetEmail = email || (role === 'admin' ? 'qwer@gmail.com' : '');
@@ -129,7 +142,7 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
   };
 
   const updateLeaveStatus = (id: string, status: 'approved' | 'rejected') => {
-    const leave = (leavesData || []).find(l => l.id === id);
+    const leave = (masterLeaves || []).find(l => l.id === id);
     if (!leave) return;
 
     const updateData = { 
@@ -215,8 +228,8 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
           {currentUser.role === 'admin' ? (
             <AdminView 
               users={allUsers} 
-              leaveRequests={leavesData || []} 
-              tasks={tasksData || []} 
+              leaveRequests={masterLeaves || []} 
+              tasks={masterTasks || []} 
               attendance={[]} 
               onUpdateLeave={updateLeaveStatus}
               onAssignTask={assignTask}
@@ -224,9 +237,9 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
           ) : (
             <EmployeeView 
               user={currentUser} 
-              attendance={[]} 
-              tasks={tasksData || []} 
-              leaveRequests={leavesData || []}
+              attendance={employeeAttendance || []} 
+              tasks={employeeTasks || []} 
+              leaveRequests={employeeLeaves || []}
               onRequestLeave={requestLeave}
             />
           )}
