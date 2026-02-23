@@ -62,6 +62,7 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
   const myTasks = tasks.filter(t => t.assignedToEmployeeId === user.id);
   const myAttendance = attendance.filter(a => a.employeeId === user.id);
   const myLeaves = leaveRequests.filter(l => l.employeeId === user.id);
+  const approvedLeavesCount = myLeaves.filter(l => l.status === 'approved').length;
 
   const today = new Date().toISOString().split('T')[0];
   const todayRecord = myAttendance.find(a => a.date === today);
@@ -121,7 +122,7 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
         teamId: profileForm.team,
         employeeNumber: profileForm.employeeNumber,
         dateOfJoining: profileForm.dateOfJoining,
-        leaveBalance: 0 
+        leaveBalance: approvedLeavesCount // Sync count if needed, or keep separate
       })
     };
 
@@ -231,8 +232,8 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
               </div>
               <div className="grid grid-cols-2 gap-4 w-full md:w-auto">
                 <div className="bg-primary/5 rounded-xl p-3 border border-primary/10">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Leave Balance</p>
-                  <p className="text-xl font-bold text-primary">0 Days</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Approved Leaves</p>
+                  <p className="text-xl font-bold text-primary">{approvedLeavesCount} Requests</p>
                 </div>
                 <div className="bg-accent/10 rounded-xl p-3 border border-accent/20">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Attendance</p>
