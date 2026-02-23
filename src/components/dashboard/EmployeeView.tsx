@@ -10,10 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Clock, ClipboardList, Send, Briefcase, Mail, Phone, Hash, UserCog, Check, X } from "lucide-react";
+import { Calendar, Clock, ClipboardList, Send, Briefcase, Mail, Phone, Hash, UserCog, Check, X, LogOut } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { useFirestore, setDocumentNonBlocking } from "@/firebase";
+import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
 import { doc } from "firebase/firestore";
 
 interface EmployeeViewProps {
@@ -60,6 +60,30 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
   const myAttendance = attendance.filter(a => a.employeeId === user.id);
   const myLeaves = leaveRequests.filter(l => l.employeeId === user.id);
 
+  const today = new Date().toISOString().split('T')[0];
+  const todayRecord = myAttendance.find(a => a.date === today);
+
+  const handleClockIn = () => {
+    const attendanceId = `att-${today}-${user.id}`;
+    const data = {
+      id: attendanceId,
+      employeeId: user.id,
+      employeeName: user.name,
+      date: today,
+      checkInTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      status: 'present'
+    };
+    setDocumentNonBlocking(doc(db, 'employees', user.id, 'attendance', attendanceId), data, { merge: true });
+    toast({ title: "Attendance Logged", description: `Executive clock-in recorded at ${data.checkInTime}.` });
+  };
+
+  const handleClockOut = () => {
+    if (!todayRecord) return;
+    const checkOutTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    updateDocumentNonBlocking(doc(db, 'employees', user.id, 'attendance', todayRecord.id), { checkOutTime });
+    toast({ title: "Attendance Logged", description: `Executive clock-out recorded at ${checkOutTime}.` });
+  };
+
   const handleLeaveSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!leaveForm.startDate || !leaveForm.endDate || !leaveForm.reason) {
@@ -89,7 +113,7 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
       teamId: profileForm.team,
       employeeNumber: profileForm.employeeNumber,
       dateOfJoining: profileForm.dateOfJoining,
-      leaveBalance: 0 // Default balance
+      leaveBalance: 0 
     };
 
     setDocumentNonBlocking(employeeRef, updatedData, { merge: true });
@@ -189,7 +213,7 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
                 </div>
                 <div className="bg-accent/10 rounded-xl p-3 border border-accent/20">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Attendance</p>
-                  <p className="text-xl font-bold text-accent-foreground">0%</p>
+                  <p className="text-xl font-bold text-accent-foreground">{myAttendance.length > 0 ? "Present" : "Pending"}</p>
                 </div>
               </div>
             </div>
@@ -259,11 +283,32 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button className="w-full justify-start h-12 rounded-xl" variant="outline">
-              <Clock className="mr-2 h-4 w-4 text-primary" />
-              Clock In Now
-            </Button>
-            <Button className="w-full justify-start h-12 rounded-xl" variant="outline">
+            {!todayRecord ? (
+              <Button 
+                onClick={handleClockIn}
+                className="w-full justify-start h-12 rounded-xl group hover:bg-primary hover:text-white transition-all" 
+                variant="outline"
+              >
+                <Clock className="mr-2 h-4 w-4 text-primary group-hover:text-white" />
+                Clock In Now
+              </Button>
+            ) : !todayRecord.checkOutTime ? (
+              <Button 
+                onClick={handleClockOut}
+                className="w-full justify-start h-12 rounded-xl group hover:bg-destructive hover:text-white transition-all border-destructive/20" 
+                variant="outline"
+              >
+                <LogOut className="mr-2 h-4 w-4 text-destructive group-hover:text-white" />
+                Clock Out Now
+              </Button>
+            ) : (
+              <div className="p-4 bg-green-50 rounded-xl border border-green-100 text-center">
+                <p className="text-xs font-bold text-green-700 uppercase tracking-widest">Shift Completed</p>
+                <p className="text-sm text-green-600 mt-1">{todayRecord.checkInTime} - {todayRecord.checkOutTime}</p>
+              </div>
+            )}
+            
+            <Button className="w-full justify-start h-12 rounded-xl" variant="outline" onClick={() => toast({ title: "Daily Report", description: "Executive summary is being prepared." })}>
               <ClipboardList className="mr-2 h-4 w-4 text-primary" />
               View Daily Report
             </Button>
@@ -431,18 +476,24 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {myAttendance.map(record => (
-                    <TableRow key={record.id}>
-                      <TableCell className="font-medium">{record.date}</TableCell>
-                      <TableCell>{record.checkInTime}</TableCell>
-                      <TableCell>{record.checkOutTime || 'Pending'}</TableCell>
-                      <TableCell>
-                        <Badge variant={record.status === 'present' ? 'default' : 'outline'} className={record.status === 'present' ? 'bg-green-500' : ''}>
-                          {record.status}
-                        </Badge>
-                      </TableCell>
+                  {myAttendance.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">No attendance records found.</TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    myAttendance.sort((a,b) => b.date.localeCompare(a.date)).map(record => (
+                      <TableRow key={record.id}>
+                        <TableCell className="font-medium">{record.date}</TableCell>
+                        <TableCell>{record.checkInTime}</TableCell>
+                        <TableCell>{record.checkOutTime || 'Shift in progress'}</TableCell>
+                        <TableCell>
+                          <Badge variant={record.status === 'present' ? 'default' : 'outline'} className={record.status === 'present' ? 'bg-green-500' : ''}>
+                            {record.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
