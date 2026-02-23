@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react";
@@ -11,13 +12,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Users, CalendarCheck, Clock, ClipboardList, TrendingUp, CheckCircle2, XCircle, Sparkles, Search, ArrowLeft, LayoutDashboard } from "lucide-react";
+import { Users, CalendarCheck, Clock, ClipboardList, TrendingUp, CheckCircle2, XCircle, Sparkles, Search, ArrowLeft, LayoutDashboard, UserCog, Mail, Phone, Image as ImageIcon, Shield } from "lucide-react";
 import { adminDailyBriefing, AdminDailyBriefingOutput } from "@/ai/flows/admin-daily-briefing-flow";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { EmployeeView } from "./EmployeeView";
+import { useFirestore, setDocumentNonBlocking } from "@/firebase";
+import { doc } from "firebase/firestore";
 
 interface AdminViewProps {
+  currentUser: User;
   users: User[];
   leaveRequests: LeaveRequest[];
   tasks: Task[];
@@ -26,7 +30,8 @@ interface AdminViewProps {
   onAssignTask: (task: any) => void;
 }
 
-export function AdminView({ users, leaveRequests, tasks, attendance, onUpdateLeave, onAssignTask }: AdminViewProps) {
+export function AdminView({ currentUser, users, leaveRequests, tasks, attendance, onUpdateLeave, onAssignTask }: AdminViewProps) {
+  const db = useFirestore();
   const [briefing, setBriefing] = useState<AdminDailyBriefingOutput | null>(null);
   const [isGeneratingBriefing, setIsGeneratingBriefing] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
@@ -36,6 +41,14 @@ export function AdminView({ users, leaveRequests, tasks, attendance, onUpdateLea
     assignedToEmployeeId: '',
     dueDate: '',
     priority: 'medium' as any
+  });
+
+  // Profile management state
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    name: currentUser.name,
+    phone: currentUser.phone,
+    avatarUrl: currentUser.avatarUrl || ''
   });
 
   const employees = users.filter(u => u.role === 'employee');
@@ -79,11 +92,10 @@ export function AdminView({ users, leaveRequests, tasks, attendance, onUpdateLea
       });
       setBriefing(result);
     } catch (error: any) {
-      // Catch specific errors thrown by the flow and display them gracefully
       toast({
         variant: "destructive",
         title: "Briefing Service Busy",
-        description: error.message || "The AI intelligence engine is currently at capacity. Please try again in a moment.",
+        description: error.message || "The AI engine is at capacity. Please try again later.",
       });
     } finally {
       setIsGeneratingBriefing(false);
@@ -102,6 +114,25 @@ export function AdminView({ users, leaveRequests, tasks, attendance, onUpdateLea
       assignedToName: assignee?.name || 'Unknown',
     });
     setTaskForm({ title: '', description: '', assignedToEmployeeId: '', dueDate: '', priority: 'medium' });
+  };
+
+  const handleSaveProfile = () => {
+    const names = profileForm.name.trim().split(/\s+/);
+    const firstName = names[0] || 'Executive';
+    const lastName = names.slice(1).join(' ') || 'Admin';
+
+    const updateData = {
+      id: currentUser.id,
+      firstName,
+      lastName,
+      email: currentUser.email,
+      phoneNumber: profileForm.phone,
+      avatarUrl: profileForm.avatarUrl
+    };
+
+    setDocumentNonBlocking(doc(db, 'admins', currentUser.id), updateData, { merge: true });
+    setIsEditingProfile(false);
+    toast({ title: "Profile Synchronized", description: "Executive credentials have been updated." });
   };
 
   if (selectedEmployee) {
@@ -133,12 +164,12 @@ export function AdminView({ users, leaveRequests, tasks, attendance, onUpdateLea
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-primary">Admin Console</h1>
-          <p className="text-muted-foreground">Comprehensive oversight and resource management.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-primary">Executive Console</h1>
+          <p className="text-muted-foreground">Comprehensive oversight and strategic resource management.</p>
         </div>
         <Button onClick={generateBriefing} disabled={isGeneratingBriefing} variant="outline" className="rounded-xl luxury-shadow hover:bg-primary/5">
           <Sparkles className={cn("mr-2 h-4 w-4 text-accent", isGeneratingBriefing && "animate-spin")} />
-          Refresh AI Briefing
+          Generate AI Intelligence
         </Button>
       </div>
 
@@ -214,6 +245,7 @@ export function AdminView({ users, leaveRequests, tasks, attendance, onUpdateLea
               <TabsTrigger value="employees" className="rounded-lg">Staff Directory</TabsTrigger>
               <TabsTrigger value="leaves" className="rounded-lg">Leave Requests</TabsTrigger>
               <TabsTrigger value="tasks" className="rounded-lg">Active Projects</TabsTrigger>
+              <TabsTrigger value="profile" className="rounded-lg">My Portfolio</TabsTrigger>
             </TabsList>
 
             <TabsContent value="employees" className="mt-6">
@@ -345,6 +377,118 @@ export function AdminView({ users, leaveRequests, tasks, attendance, onUpdateLea
                       )}
                     </TableBody>
                   </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="profile" className="mt-6 space-y-6">
+              <Card className="border-none luxury-shadow overflow-hidden glass-card">
+                <div className="h-32 gold-gradient relative">
+                  <div className="absolute -bottom-12 left-8">
+                    <div className="p-1 bg-white rounded-2xl luxury-shadow">
+                      <div className="w-24 h-24 rounded-xl overflow-hidden relative border-2 border-white">
+                        <img src={currentUser.avatarUrl} alt={currentUser.name} className="w-full h-full object-cover" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="absolute top-4 right-4">
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      className="rounded-full bg-white/20 backdrop-blur-md border-white/30 text-white hover:bg-white/40"
+                      onClick={() => setIsEditingProfile(!isEditingProfile)}
+                    >
+                      <UserCog className="h-4 w-4 mr-2" />
+                      {isEditingProfile ? "Cancel" : "Edit Credentials"}
+                    </Button>
+                  </div>
+                </div>
+                <CardContent className="pt-16 pb-8 px-8">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b pb-8 mb-8">
+                    <div className="space-y-1 w-full max-w-md">
+                      {isEditingProfile ? (
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest">Executive Name</Label>
+                            <Input 
+                              value={profileForm.name} 
+                              onChange={e => setProfileForm({...profileForm, name: e.target.value})}
+                              className="text-xl font-bold h-11 bg-white/50"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest">Avatar URL</Label>
+                            <div className="relative">
+                              <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input 
+                                value={profileForm.avatarUrl} 
+                                onChange={e => setProfileForm({...profileForm, avatarUrl: e.target.value})}
+                                className="pl-10 h-10 bg-white/50"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <h2 className="text-3xl font-bold tracking-tight text-primary">{currentUser.name}</h2>
+                          <div className="flex items-center gap-2 text-muted-foreground mt-2">
+                            <Shield className="h-4 w-4 text-accent" />
+                            <Badge variant="outline" className="text-primary border-primary/20">Authorized Executive</Badge>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    {isEditingProfile && (
+                      <Button onClick={handleSaveProfile} className="w-full md:w-auto luxury-shadow">
+                        Synchronize Profile
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-muted rounded-xl text-primary"><Mail className="h-5 w-5" /></div>
+                        <div>
+                          <p className="text-xs text-muted-foreground uppercase font-bold tracking-tighter">Professional Email</p>
+                          <p className="font-semibold">{currentUser.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-muted rounded-xl text-primary"><Phone className="h-5 w-5" /></div>
+                        <div>
+                          <p className="text-xs text-muted-foreground uppercase font-bold tracking-tighter">Secure Line</p>
+                          {isEditingProfile ? (
+                            <Input 
+                              value={profileForm.phone} 
+                              onChange={e => setProfileForm({...profileForm, phone: e.target.value})}
+                              className="h-9 mt-1 bg-white/50"
+                            />
+                          ) : (
+                            <p className="font-semibold">{currentUser.phone || 'Not configured'}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <Card className="bg-muted/30 border-none">
+                      <CardContent className="pt-6">
+                        <h4 className="text-sm font-bold flex items-center gap-2 mb-4">
+                          <Activity className="h-4 w-4 text-primary" />
+                          Management Activity
+                        </h4>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-muted-foreground">Delegated Tasks</span>
+                            <span className="font-bold">{tasks.length}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-muted-foreground">Decisions Pending</span>
+                            <span className="font-bold text-accent-foreground">{pendingLeaves.length}</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

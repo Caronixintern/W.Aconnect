@@ -282,6 +282,7 @@ export default function Home() {
         <main className="container mx-auto px-4 pt-24 pb-12 max-w-7xl">
           {currentUser.role === 'admin' ? (
             <AdminView 
+              currentUser={currentUser}
               users={allUsers} 
               leaveRequests={masterLeaves || []} 
               tasks={masterTasks || []} 
