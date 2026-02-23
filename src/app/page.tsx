@@ -77,7 +77,6 @@ export default function Home() {
           };
 
           const collectionName = role === 'employee' ? 'employees' : 'admins';
-          // Use non-blocking merged set for profile creation
           setDocumentNonBlocking(doc(db, collectionName, userCredential.user.uid), profileData, { merge: true });
         }
       })
@@ -147,9 +146,9 @@ export default function Home() {
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
         <div className="text-white space-y-6">
           <div className="w-20 h-20 bg-white/10 backdrop-blur-xl rounded-3xl flex items-center justify-center border border-white/20 shadow-2xl rotate-3">
-            <span className="text-4xl font-black italic">OZ</span>
+            <span className="text-4xl font-black italic">WA</span>
           </div>
-          <h1 className="text-6xl font-black tracking-tight leading-tight">Office<br/><span className="text-accent">Zenith</span></h1>
+          <h1 className="text-6xl font-black tracking-tight leading-tight">Wonderlight<br/><span className="text-accent">Adventure</span></h1>
           <p className="text-xl text-white/80 max-w-md">Experience the pinnacle of luxury office management. Seamlessly track attendance, manage leaves, and coordinate teams.</p>
         </div>
 
@@ -163,7 +162,7 @@ export default function Home() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Email</Label>
-                  <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@officezenith.com" />
+                  <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@wonderlight.com" />
                 </div>
                 <div className="space-y-2">
                   <Label>Password</Label>
@@ -247,7 +246,7 @@ export default function Home() {
                       )}
                       <div className="space-y-2">
                         <Label>Email</Label>
-                        <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="employee@officezenith.com" />
+                        <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="employee@wonderlight.com" />
                       </div>
                       <div className="space-y-2">
                         <Label>Password</Label>
@@ -269,7 +268,7 @@ export default function Home() {
       </div>
       
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/50 text-sm">
-        &copy; 2024 OfficeZenith Luxury Systems. All rights reserved.
+        &copy; 2024 WonderlightAdventure Luxury Systems. All rights reserved.
       </div>
     </div>
   );

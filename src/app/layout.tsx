@@ -3,7 +3,7 @@ import './globals.css';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'OfficeZenith | Luxury Office Management',
+  title: 'WonderlightAdventure | Luxury Office Management',
   description: 'The pinnacle of luxury office management systems.',
 };
 

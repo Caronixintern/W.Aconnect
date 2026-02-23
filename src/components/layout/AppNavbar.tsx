@@ -42,9 +42,9 @@ export function AppNavbar({ currentUser, onLogout }: AppNavbarProps) {
         
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 gold-gradient rounded-xl flex items-center justify-center shadow-lg transform rotate-3">
-            <span className="text-white font-bold text-xl">OZ</span>
+            <span className="text-white font-bold text-xl">WA</span>
           </div>
-          <span className="text-xl font-bold tracking-tight text-primary hidden sm:block">OfficeZenith</span>
+          <span className="text-xl font-bold tracking-tight text-primary hidden sm:block">WonderlightAdventure</span>
         </div>
       </div>
 
