@@ -105,7 +105,6 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
 
     authPromise
       .then((userCredential) => {
-        // Only initialize profile on Sign Up. Sign In should just restore existing data.
         if (mode === 'signup') {
           const isTargetAdmin = isAdminEmail(targetEmail);
           const names = name.split(' ');
@@ -157,6 +156,20 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
     updateDocumentNonBlocking(doc(db, 'leaveRequests', id), updateData);
     updateDocumentNonBlocking(doc(db, 'employees', leave.employeeId, 'leaveRequests', id), updateData);
     
+    // Create notification for employee
+    const notifId = `notif-${Date.now()}`;
+    const notifData = {
+      id: notifId,
+      recipientEmployeeId: leave.employeeId,
+      message: `Your leave request for ${leave.startDate} to ${leave.endDate} has been ${status.toUpperCase()}.`,
+      type: `leave_${status}`,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+      relatedEntityId: id,
+      relatedEntityType: 'LeaveRequest'
+    };
+    setDocumentNonBlocking(doc(db, 'employees', leave.employeeId, 'notifications', notifId), notifData, { merge: true });
+
     toast({ title: "Status Updated", description: `Request has been ${status}.` });
   };
 
@@ -172,6 +185,21 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
 
     setDocumentNonBlocking(doc(db, 'tasks', taskId), fullTask, { merge: true });
     setDocumentNonBlocking(doc(db, 'employees', taskData.assignedToEmployeeId, 'tasks', taskId), fullTask, { merge: true });
+
+    // Notify employee
+    const notifId = `notif-${Date.now()}`;
+    const notifData = {
+      id: notifId,
+      recipientEmployeeId: taskData.assignedToEmployeeId,
+      message: `New task assigned: ${taskData.title}`,
+      type: 'task_assigned',
+      isRead: false,
+      createdAt: new Date().toISOString(),
+      relatedEntityId: taskId,
+      relatedEntityType: 'Task'
+    };
+    setDocumentNonBlocking(doc(db, 'employees', taskData.assignedToEmployeeId, 'notifications', notifId), notifData, { merge: true });
+
     toast({ title: "Task Assigned", description: "The task has been successfully delegated." });
   };
 
@@ -186,6 +214,22 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
 
     setDocumentNonBlocking(doc(db, 'leaveRequests', leaveId), fullLeave, { merge: true });
     setDocumentNonBlocking(doc(db, 'employees', user?.uid!, 'leaveRequests', leaveId), fullLeave, { merge: true });
+
+    // Notify all admins
+    (adminsData || []).forEach(admin => {
+      const notifId = `notif-${Date.now()}-${admin.id}`;
+      const notifData = {
+        id: notifId,
+        recipientAdminId: admin.id,
+        message: `${employeeProfile?.firstName || 'An employee'} requested leave for ${leaveData.startDate}.`,
+        type: 'leave_requested',
+        isRead: false,
+        createdAt: new Date().toISOString(),
+        relatedEntityId: leaveId,
+        relatedEntityType: 'LeaveRequest'
+      };
+      setDocumentNonBlocking(doc(db, 'admins', admin.id, 'notifications', notifId), notifData, { merge: true });
+    });
   };
 
   if (isUserLoading || (user && !isAdminAccount && (isAdminLoading || isEmployeeLoading))) {
