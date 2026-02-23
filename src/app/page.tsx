@@ -30,7 +30,7 @@ export default function Home() {
   // Pre-fill admin credentials when switching to admin login
   useEffect(() => {
     if (authMode === 'admin-login') {
-      setEmail('wonderlightadventure@gmail.com');
+      setEmail('qwer@gmail.com');
       setPassword('Dh123@');
     } else if (authMode === 'initial') {
       setEmail('');
@@ -179,7 +179,7 @@ export default function Home() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Email</Label>
-                  <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="wonderlightadventure@gmail.com" />
+                  <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="qwer@gmail.com" />
                 </div>
                 <div className="space-y-2">
                   <Label>Password</Label>
@@ -258,7 +258,7 @@ export default function Home() {
                       {authMode === 'employee-signup' && (
                         <div className="space-y-2">
                           <Label>Full Name</Label>
-                          <Input type="text" value={name} onChange={setName} placeholder="Julian Sterling" />
+                          <Input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Julian Sterling" />
                         </div>
                       )}
                       <div className="space-y-2">
