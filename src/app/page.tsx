@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import { AppNavbar } from "@/components/layout/AppNavbar";
 import { EmployeeView } from "@/components/dashboard/EmployeeView";
 import { AdminView } from "@/components/dashboard/AdminView";
@@ -27,10 +27,7 @@ import { doc, collection, query } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 import Image from "next/image";
 
-export default function Home(props: { params: Promise<any>; searchParams: Promise<any> }) {
-  const unwrappedParams = use(props.params);
-  const unwrappedSearchParams = use(props.searchParams);
-
+export default function Home() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
