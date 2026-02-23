@@ -1,0 +1,521 @@
+{
+  "entities": {
+    "Employee": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Employee",
+      "type": "object",
+      "description": "Represents an employee within the organization, storing their profile details and operational data.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Employee entity."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the employee."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the employee."
+        },
+        "employeeNumber": {
+          "type": "string",
+          "description": "A unique identifier assigned to the employee by the organization (e.g., HR ID)."
+        },
+        "email": {
+          "type": "string",
+          "description": "The primary email address of the employee.",
+          "format": "email"
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "The contact phone number of the employee."
+        },
+        "dateOfJoining": {
+          "type": "string",
+          "description": "The date when the employee joined the company.",
+          "format": "date"
+        },
+        "leaveBalance": {
+          "type": "number",
+          "description": "The current number of leave days available to the employee."
+        },
+        "teamId": {
+          "type": "string",
+          "description": "Reference to the Team this employee belongs to. (Relationship: Team 1:N Employee)"
+        }
+      },
+      "required": [
+        "id",
+        "firstName",
+        "lastName",
+        "employeeNumber",
+        "email",
+        "dateOfJoining",
+        "leaveBalance",
+        "teamId"
+      ]
+    },
+    "AdminProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AdminProfile",
+      "type": "object",
+      "description": "Represents an administrator profile, distinct from an employee, with permissions to manage the application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the AdminProfile entity."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the administrator."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the administrator."
+        },
+        "email": {
+          "type": "string",
+          "description": "The primary email address of the administrator.",
+          "format": "email"
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "The contact phone number of the administrator."
+        }
+      },
+      "required": [
+        "id",
+        "firstName",
+        "lastName",
+        "email"
+      ]
+    },
+    "Team": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Team",
+      "type": "object",
+      "description": "Represents a team within the organization, grouping employees together.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Team entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the team."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the team's purpose or responsibilities."
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "Attendance": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Attendance",
+      "type": "object",
+      "description": "Records an employee's daily attendance, including check-in and check-out times.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Attendance record."
+        },
+        "employeeId": {
+          "type": "string",
+          "description": "Reference to the Employee whose attendance is being recorded. (Relationship: Employee 1:N Attendance)"
+        },
+        "date": {
+          "type": "string",
+          "description": "The calendar date for which the attendance is recorded.",
+          "format": "date"
+        },
+        "checkInTime": {
+          "type": "string",
+          "description": "The timestamp when the employee checked in.",
+          "format": "date-time"
+        },
+        "checkOutTime": {
+          "type": "string",
+          "description": "The timestamp when the employee checked out.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "The attendance status for the day (e.g., 'Present', 'Absent', 'Late', 'Half Day')."
+        }
+      },
+      "required": [
+        "id",
+        "employeeId",
+        "date",
+        "checkInTime",
+        "status"
+      ]
+    },
+    "LeaveRequest": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LeaveRequest",
+      "type": "object",
+      "description": "Manages employee leave applications, including approval status.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the LeaveRequest."
+        },
+        "employeeId": {
+          "type": "string",
+          "description": "Reference to the Employee who submitted the leave request. (Relationship: Employee 1:N LeaveRequest)"
+        },
+        "startDate": {
+          "type": "string",
+          "description": "The start date of the requested leave.",
+          "format": "date"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The end date of the requested leave.",
+          "format": "date"
+        },
+        "reason": {
+          "type": "string",
+          "description": "The reason provided by the employee for the leave request."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the leave request (e.g., 'Pending', 'Approved', 'Rejected')."
+        },
+        "requestDate": {
+          "type": "string",
+          "description": "The timestamp when the leave request was submitted.",
+          "format": "date-time"
+        },
+        "adminId": {
+          "type": "string",
+          "description": "Reference to the AdminProfile who processed this leave request (approved/rejected). (Relationship: AdminProfile 1:N LeaveRequest)"
+        },
+        "adminActionDate": {
+          "type": "string",
+          "description": "The timestamp when the admin took action on the leave request.",
+          "format": "date-time"
+        },
+        "adminComment": {
+          "type": "string",
+          "description": "Optional comments from the administrator regarding the leave request decision."
+        }
+      },
+      "required": [
+        "id",
+        "employeeId",
+        "startDate",
+        "endDate",
+        "reason",
+        "status",
+        "requestDate"
+      ]
+    },
+    "Task": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Task",
+      "type": "object",
+      "description": "Details for a specific work item or task assigned to an employee by an administrator.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Task."
+        },
+        "title": {
+          "type": "string",
+          "description": "A concise title for the task."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the task and its requirements."
+        },
+        "assignedToEmployeeId": {
+          "type": "string",
+          "description": "Reference to the Employee to whom the task is assigned. (Relationship: Employee 1:N Task)"
+        },
+        "assignedByAdminId": {
+          "type": "string",
+          "description": "Reference to the AdminProfile who assigned this task. (Relationship: AdminProfile 1:N Task)"
+        },
+        "assignmentDate": {
+          "type": "string",
+          "description": "The timestamp when the task was assigned.",
+          "format": "date-time"
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "The deadline for completing the task.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the task (e.g., 'Pending', 'InProgress', 'Completed', 'Canceled')."
+        },
+        "completionDate": {
+          "type": "string",
+          "description": "The timestamp when the task was marked as completed.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "assignedToEmployeeId",
+        "assignedByAdminId",
+        "assignmentDate",
+        "dueDate",
+        "status"
+      ]
+    },
+    "Notification": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Notification",
+      "type": "object",
+      "description": "Handles real-time alerts and messages for employees and administrators.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Notification."
+        },
+        "recipientEmployeeId": {
+          "type": "string",
+          "description": "Reference to the Employee who is the recipient of this notification. (Relationship: Employee 1:N Notification). Either this or recipientAdminId must be present."
+        },
+        "recipientAdminId": {
+          "type": "string",
+          "description": "Reference to the AdminProfile who is the recipient of this notification. (Relationship: AdminProfile 1:N Notification). Either this or recipientEmployeeId must be present."
+        },
+        "message": {
+          "type": "string",
+          "description": "The content of the notification message."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of notification (e.g., 'LeaveApproved', 'TaskAssigned', 'AttendanceAlert')."
+        },
+        "isRead": {
+          "type": "boolean",
+          "description": "Indicates whether the recipient has read the notification."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The timestamp when the notification was created.",
+          "format": "date-time"
+        },
+        "relatedEntityId": {
+          "type": "string",
+          "description": "Optional: Reference to the ID of the entity related to this notification (e.g., LeaveRequest ID, Task ID)."
+        },
+        "relatedEntityType": {
+          "type": "string",
+          "description": "Optional: The type of the entity related to this notification (e.g., 'LeaveRequest', 'Task')."
+        }
+      },
+      "required": [
+        "id",
+        "message",
+        "type",
+        "isRead",
+        "createdAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/employees/{employeeId}",
+        "definition": {
+          "entityName": "Employee",
+          "schema": {
+            "$ref": "#/backend/entities/Employee"
+          },
+          "description": "Stores individual employee profiles. The '{employeeId}' matches `request.auth.uid`. This collection also defines who is an employee for DBAC. Includes 'teamId' for team association.",
+          "params": [
+            {
+              "name": "employeeId",
+              "description": "The unique Firebase Authentication UID of the employee."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/admins/{adminId}",
+        "definition": {
+          "entityName": "AdminProfile",
+          "schema": {
+            "$ref": "#/backend/entities/AdminProfile"
+          },
+          "description": "Stores individual administrator profiles. The '{adminId}' matches `request.auth.uid`. Existence in this collection grants administrative privileges (DBAC).",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The unique Firebase Authentication UID of the administrator."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/teams/{teamId}",
+        "definition": {
+          "entityName": "Team",
+          "schema": {
+            "$ref": "#/backend/entities/Team"
+          },
+          "description": "Stores definitions of teams within the organization. Primarily managed by administrators. Employees can read teams they belong to via their 'teamId' field.",
+          "params": [
+            {
+              "name": "teamId",
+              "description": "The unique identifier for the team."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/employees/{employeeId}/attendance/{attendanceId}",
+        "definition": {
+          "entityName": "Attendance",
+          "schema": {
+            "$ref": "#/backend/entities/Attendance"
+          },
+          "description": "Individual attendance records for a specific employee. The '{employeeId}' from the path indicates ownership, enabling direct access for the employee. Document contains denormalized 'employeeId' for query flexibility and authorization independence.",
+          "params": [
+            {
+              "name": "employeeId",
+              "description": "The unique Firebase Authentication UID of the employee owner of this attendance record."
+            },
+            {
+              "name": "attendanceId",
+              "description": "The unique identifier for the attendance record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/employees/{employeeId}/leaveRequests/{leaveRequestId}",
+        "definition": {
+          "entityName": "LeaveRequest",
+          "schema": {
+            "$ref": "#/backend/entities/LeaveRequest"
+          },
+          "description": "Leave requests submitted by a specific employee. The '{employeeId}' from the path indicates the requester, enabling direct access for the employee. Document contains denormalized 'employeeId' (requester) and 'adminId' (processor) for authorization independence and queryability.",
+          "params": [
+            {
+              "name": "employeeId",
+              "description": "The unique Firebase Authentication UID of the employee who submitted this leave request."
+            },
+            {
+              "name": "leaveRequestId",
+              "description": "The unique identifier for the leave request."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/leaveRequests/{leaveRequestId}",
+        "definition": {
+          "entityName": "LeaveRequest",
+          "schema": {
+            "$ref": "#/backend/entities/LeaveRequest"
+          },
+          "description": "Master collection of all leave requests in the system. Primarily accessed by administrators for global overview and processing. Document contains denormalized 'employeeId' (requester) and 'adminId' (processor) for robust authorization checks, supporting Authorization Independence and QAPs for admins.",
+          "params": [
+            {
+              "name": "leaveRequestId",
+              "description": "The unique identifier for the leave request."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/employees/{employeeId}/tasks/{taskId}",
+        "definition": {
+          "entityName": "Task",
+          "schema": {
+            "$ref": "#/backend/entities/Task"
+          },
+          "description": "Tasks assigned to a specific employee. The '{employeeId}' from the path indicates the assignee, enabling direct access for the employee. Document contains denormalized 'assignedToEmployeeId' (assignee) and 'assignedByAdminId' (assigner) for authorization independence and queryability.",
+          "params": [
+            {
+              "name": "employeeId",
+              "description": "The unique Firebase Authentication UID of the employee to whom this task is assigned."
+            },
+            {
+              "name": "taskId",
+              "description": "The unique identifier for the task."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tasks/{taskId}",
+        "definition": {
+          "entityName": "Task",
+          "schema": {
+            "$ref": "#/backend/entities/Task"
+          },
+          "description": "Master collection of all tasks in the system. Primarily accessed by administrators for global overview and management. Document contains denormalized 'assignedToEmployeeId' (assignee) and 'assignedByAdminId' (assigner) for robust authorization checks, supporting Authorization Independence and QAPs for admins.",
+          "params": [
+            {
+              "name": "taskId",
+              "description": "The unique identifier for the task."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/employees/{employeeId}/notifications/{notificationId}",
+        "definition": {
+          "entityName": "Notification",
+          "schema": {
+            "$ref": "#/backend/entities/Notification"
+          },
+          "description": "Notifications specific to an employee. The '{employeeId}' from the path indicates the recipient. Document contains denormalized 'recipientEmployeeId' for authorization independence and queryability.",
+          "params": [
+            {
+              "name": "employeeId",
+              "description": "The unique Firebase Authentication UID of the employee who is the recipient of this notification."
+            },
+            {
+              "name": "notificationId",
+              "description": "The unique identifier for the notification."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/admins/{adminId}/notifications/{notificationId}",
+        "definition": {
+          "entityName": "Notification",
+          "schema": {
+            "$ref": "#/backend/entities/Notification"
+          },
+          "description": "Notifications specific to an administrator. The '{adminId}' from the path indicates the recipient. Document contains denormalized 'recipientAdminId' for authorization independence and queryability.",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The unique Firebase Authentication UID of the administrator who is the recipient of this notification."
+            },
+            {
+              "name": "notificationId",
+              "description": "The unique identifier for the notification."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure for OfficeZenith is designed with a strong emphasis on Authorization Independence, Structural Segregation, and Query Ability Presets (QAPs) to ensure security, scalability, and debuggability.\n\n**Authorization Independence via Denormalization:**\nEach document contains all necessary authorization context, eliminating the need for `get()` calls in security rules. For instance, `LeaveRequest` documents, whether in the employee-specific subcollection or the global admin collection, explicitly include `employeeId` (the requester) and `adminId` (the processor). Similarly, `Task` documents include `assignedToEmployeeId` and `assignedByAdminId`, and `Notification` documents include either `recipientEmployeeId` or `recipientAdminId`. This denormalization allows security rules to evaluate access purely based on `request.auth.uid` against fields within the requested document, or against the `{userId}` wildcard in the path, without fetching parent documents. This design ensures atomic operations and simplifies rule logic, making it robust against race conditions.\n\n**Structural Segregation for QAPs:**\nTo support QAPs (Rules are not Filters) and simplify security rules, data is segregated based on its security posture:\n\n1.  **User Profiles and Roles:** `employees/{employeeId}` and `admins/{adminId}` collections serve as the primary source of truth for user profiles and implicitly define user roles (DBAC - Database Access Control based on existence). The `{employeeId}` or `{adminId}` wildcard in these paths directly maps to `request.auth.uid`, making authentication straightforward.\n\n2.  **Private User-Owned Data:** For entities like `Attendance`, `LeaveRequest`, `Task`, and `Notification` that are primarily owned or intended for a single user (employee or admin), dedicated subcollections are used: `/employees/{employeeId}/attendance/{attendanceId}`, `/employees/{employeeId}/leaveRequests/{leaveRequestId}`, `/employees/{employeeId}/tasks/{taskId}`, `/employees/{employeeId}/notifications/{notificationId}`, and `/admins/{adminId}/notifications/{notificationId}`. This path-based ownership (`request.auth.uid == employeeId` or `request.auth.uid == adminId` from the path wildcard) ensures that `list` operations for these subcollections inherently respect user ownership, fulfilling QAPs for individual users. For example, an employee can only list *their own* attendance records.\n\n3.  **Admin-Managed Global Data:** For entities like `LeaveRequest` and `Task` that require a global overview and management by administrators, top-level collections (`/leaveRequests/{leaveRequestId}` and `/tasks/{taskId}`) are created. These collections hold duplicates of the documents found in the employee-specific subcollections. This segregation allows administrators to perform efficient `list` operations across all data of a certain type (e.g., 'all pending leave requests') without performance or security compromises, while employees still access their specific data via their dedicated subcollections. Rules for these global collections will restrict access to authenticated administrators (e.g., `request.auth.uid` exists in `/admins`).\n\nThis architecture minimizes rule complexity by externalizing authorization context into the data structure itself and by creating distinct, homogeneous collections for different access patterns, thereby eliminating rule-based filtering and enabling predictable query results."
+  }
+}
