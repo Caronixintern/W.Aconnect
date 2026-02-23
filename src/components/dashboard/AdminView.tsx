@@ -11,10 +11,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Users, CalendarCheck, Clock, ClipboardList, TrendingUp, CheckCircle2, XCircle, Sparkles, Search } from "lucide-react";
+import { Users, CalendarCheck, Clock, ClipboardList, TrendingUp, CheckCircle2, XCircle, Sparkles, Search, ArrowLeft, LayoutDashboard } from "lucide-react";
 import { adminDailyBriefing, AdminDailyBriefingOutput } from "@/ai/flows/admin-daily-briefing-flow";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { EmployeeView } from "./EmployeeView";
 
 interface AdminViewProps {
   users: User[];
@@ -28,6 +29,7 @@ interface AdminViewProps {
 export function AdminView({ users, leaveRequests, tasks, attendance, onUpdateLeave, onAssignTask }: AdminViewProps) {
   const [briefing, setBriefing] = useState<AdminDailyBriefingOutput | null>(null);
   const [isGeneratingBriefing, setIsGeneratingBriefing] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
   const [taskForm, setTaskForm] = useState({
     title: '',
     description: '',
@@ -96,6 +98,32 @@ export function AdminView({ users, leaveRequests, tasks, attendance, onUpdateLea
     });
     setTaskForm({ title: '', description: '', assignedToEmployeeId: '', dueDate: '', priority: 'medium' });
   };
+
+  if (selectedEmployee) {
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => setSelectedEmployee(null)} className="rounded-full">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Managing Dashboard: {selectedEmployee.name}</h1>
+            <p className="text-muted-foreground text-sm">Executive Proxy Mode enabled.</p>
+          </div>
+        </div>
+        <EmployeeView 
+          user={selectedEmployee} 
+          attendance={attendance.filter(a => a.employeeId === selectedEmployee.id)} 
+          tasks={tasks.filter(t => t.assignedToEmployeeId === selectedEmployee.id)} 
+          leaveRequests={leaveRequests.filter(l => l.employeeId === selectedEmployee.id)}
+          onRequestLeave={(req) => {
+            // Admin requesting leave on behalf of employee logic could go here
+            toast({ title: "Admin Action", description: "Processing leave request as administrator." });
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -198,8 +226,9 @@ export function AdminView({ users, leaveRequests, tasks, attendance, onUpdateLea
                       <TableRow>
                         <TableHead>Professional Profile</TableHead>
                         <TableHead>Division</TableHead>
-                        <TableHead>Contact Information</TableHead>
+                        <TableHead>Contact</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -219,10 +248,15 @@ export function AdminView({ users, leaveRequests, tasks, attendance, onUpdateLea
                           <TableCell>{emp.team}</TableCell>
                           <TableCell>
                             <p className="text-xs">{emp.email}</p>
-                            <p className="text-[10px] text-muted-foreground">{emp.phone}</p>
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Active</Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button size="sm" variant="outline" className="rounded-lg h-8 gap-2 hover:bg-primary hover:text-white transition-all" onClick={() => setSelectedEmployee(emp)}>
+                              <LayoutDashboard className="h-3 w-3" />
+                              Manage
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
