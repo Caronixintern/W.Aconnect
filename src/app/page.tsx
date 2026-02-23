@@ -5,12 +5,12 @@ import { useState, useEffect, use } from "react";
 import { AppNavbar } from "@/components/layout/AppNavbar";
 import { EmployeeView } from "@/components/dashboard/EmployeeView";
 import { AdminView } from "@/components/dashboard/AdminView";
-import { User as AppUser, LeaveRequest, Task, AttendanceRecord } from "@/lib/types";
+import { User as AppUser } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, UserCircle2, ArrowRight, ArrowLeft, Loader2, Sparkles } from "lucide-react";
+import { ShieldCheck, UserCircle2, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
 import { 
   useAuth, 
   useUser, 
@@ -23,12 +23,11 @@ import {
   setDocumentNonBlocking,
   updateDocumentNonBlocking
 } from "@/firebase";
-import { doc, collection, query, where, serverTimestamp } from "firebase/firestore";
+import { doc, collection, query } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 import Image from "next/image";
 
 export default function Home(props: { params: Promise<any>; searchParams: Promise<any> }) {
-  // Unwrap Next.js 15 params/searchParams to avoid "enumerated" errors
   use(props.params);
   use(props.searchParams);
 
@@ -42,36 +41,28 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
   const [name, setName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Pre-fill admin credentials when switching to admin login
   useEffect(() => {
     if (authMode === 'admin-login') {
       setEmail('qwer@gmail.com');
       setPassword('Dh123@');
-    } else if (authMode === 'initial') {
-      setEmail('');
-      setPassword('');
     }
   }, [authMode]);
 
-  // Real-time data from Firestore
   const adminProfileRef = useMemoFirebase(() => user ? doc(db, 'admins', user.uid) : null, [db, user]);
   const employeeProfileRef = useMemoFirebase(() => user ? doc(db, 'employees', user.uid) : null, [db, user]);
   
   const { data: adminProfile, isLoading: isAdminLoading } = useDoc(adminProfileRef);
   const { data: employeeProfile, isLoading: isEmployeeLoading } = useDoc(employeeProfileRef);
 
-  // Global collections for admin overview - Guarded by user presence to avoid permission errors when auth is null
   const employeesQuery = useMemoFirebase(() => user ? query(collection(db, 'employees')) : null, [db, user]);
   const adminsQuery = useMemoFirebase(() => user ? query(collection(db, 'admins')) : null, [db, user]);
   const allLeavesQuery = useMemoFirebase(() => user ? query(collection(db, 'leaveRequests')) : null, [db, user]);
   const allTasksQuery = useMemoFirebase(() => user ? query(collection(db, 'tasks')) : null, [db, user]);
-  const allAttendanceQuery = useMemoFirebase(() => user ? query(collection(db, 'attendance')) : null, [db, user]);
 
   const { data: employeesData } = useCollection(employeesQuery);
   const { data: adminsData } = useCollection(adminsQuery);
   const { data: leavesData } = useCollection(allLeavesQuery);
   const { data: tasksData } = useCollection(allTasksQuery);
-  const { data: attendanceData } = useCollection(allAttendanceQuery);
 
   const handleAuth = (mode: 'signin' | 'signup', role: 'employee' | 'admin') => {
     if (!email || !password) {
@@ -91,21 +82,19 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
     authPromise
       .then((userCredential) => {
         if (mode === 'signup' || (mode === 'signin' && role === 'admin' && email === 'qwer@gmail.com')) {
-          const profileData = role === 'employee' ? {
+          const names = name.split(' ');
+          const profileData = {
             id: userCredential.user.uid,
-            firstName: name.split(' ')[0] || 'Employee',
-            lastName: name.split(' ').slice(1).join(' ') || 'User',
-            employeeNumber: `EMP-${Math.floor(Math.random() * 10000)}`,
+            firstName: names[0] || (role === 'employee' ? 'Employee' : 'Executive'),
+            lastName: names.slice(1).join(' ') || (role === 'employee' ? 'User' : 'Admin'),
             email: email,
-            dateOfJoining: new Date().toISOString().split('T')[0],
-            leaveBalance: 0,
-            teamId: 'General'
-          } : {
-            id: userCredential.user.uid,
-            firstName: name ? name.split(' ')[0] : 'Executive',
-            lastName: name ? name.split(' ').slice(1).join(' ') : 'Admin',
-            email: email,
-            phoneNumber: ''
+            phoneNumber: '',
+            ...(role === 'employee' ? {
+              employeeNumber: `EMP-${Math.floor(Math.random() * 10000)}`,
+              dateOfJoining: new Date().toISOString().split('T')[0],
+              leaveBalance: 0,
+              teamId: 'General'
+            } : {})
           };
 
           const collectionName = role === 'employee' ? 'employees' : 'admins';
@@ -128,30 +117,42 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
   };
 
   const updateLeaveStatus = (id: string, status: 'approved' | 'rejected') => {
-    updateDocumentNonBlocking(doc(db, 'leaveRequests', id), { status });
+    const leave = (leavesData || []).find(l => l.id === id);
+    if (!leave) return;
+
+    const updateData = { status, adminId: user?.uid, adminActionDate: new Date().toISOString() };
+    updateDocumentNonBlocking(doc(db, 'leaveRequests', id), updateData);
+    updateDocumentNonBlocking(doc(db, 'employees', leave.employeeId, 'leaveRequests', id), updateData);
+    
     toast({ title: "Status Updated", description: `Request has been ${status}.` });
   };
 
   const assignTask = (taskData: any) => {
     const taskId = `task-${Date.now()}`;
-    const taskRef = doc(db, 'tasks', taskId);
-    setDocumentNonBlocking(taskRef, {
+    const fullTask = {
       ...taskData,
       id: taskId,
       status: 'todo',
-      assignmentDate: new Date().toISOString()
-    }, { merge: true });
+      assignmentDate: new Date().toISOString(),
+      assignedByAdminId: user?.uid
+    };
+
+    setDocumentNonBlocking(doc(db, 'tasks', taskId), fullTask, { merge: true });
+    setDocumentNonBlocking(doc(db, 'employees', taskData.assignedToEmployeeId, 'tasks', taskId), fullTask, { merge: true });
+    toast({ title: "Task Assigned", description: "The task has been successfully delegated." });
   };
 
   const requestLeave = (leaveData: any) => {
     const leaveId = `leave-${Date.now()}`;
-    const leaveRef = doc(db, 'leaveRequests', leaveId);
-    setDocumentNonBlocking(leaveRef, {
+    const fullLeave = {
       ...leaveData,
       id: leaveId,
       status: 'pending',
       requestDate: new Date().toISOString()
-    }, { merge: true });
+    };
+
+    setDocumentNonBlocking(doc(db, 'leaveRequests', leaveId), fullLeave, { merge: true });
+    setDocumentNonBlocking(doc(db, 'employees', user?.uid!, 'leaveRequests', leaveId), fullLeave, { merge: true });
   };
 
   if (isUserLoading || (user && (isAdminLoading || isEmployeeLoading))) {
@@ -164,59 +165,40 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
 
   if (user) {
     const isActuallyAdmin = !!adminProfile || user.email === 'qwer@gmail.com';
-    
     const currentUser: AppUser = {
       id: user.uid,
-      name: adminProfile?.firstName ? `${adminProfile.firstName} ${adminProfile.lastName}` : (employeeProfile?.firstName ? `${employeeProfile.firstName} ${employeeProfile.lastName}` : user.email?.split('@')[0] || 'User'),
+      name: adminProfile ? `${adminProfile.firstName} ${adminProfile.lastName}` : (employeeProfile ? `${employeeProfile.firstName} ${employeeProfile.lastName}` : user.email?.split('@')[0] || 'User'),
       email: user.email || '',
       phone: adminProfile?.phoneNumber || employeeProfile?.phoneNumber || '',
       role: isActuallyAdmin ? 'admin' : 'employee',
-      team: employeeProfile?.teamId || (isActuallyAdmin ? 'Executive Leadership' : 'General'),
+      team: employeeProfile?.teamId || (isActuallyAdmin ? 'Executive' : 'General'),
       avatarUrl: `https://picsum.photos/seed/${user.uid}/200/200`
     };
 
-    // Prepare data for views
     const allUsers: AppUser[] = [
       ...(adminsData || []).map(a => ({ id: a.id, name: `${a.firstName} ${a.lastName}`, email: a.email, role: 'admin' as const, team: 'Executive', phone: a.phoneNumber || '' })),
       ...(employeesData || []).map(e => ({ id: e.id, name: `${e.firstName} ${e.lastName}`, email: e.email, role: 'employee' as const, team: e.teamId || 'General', phone: e.phoneNumber || '' }))
     ];
 
-    const allLeaves: any[] = (leavesData || []).map(l => ({
-      ...l,
-      employeeName: allUsers.find(u => u.id === l.employeeId)?.name || 'Unknown'
-    }));
-
-    const allTasks: any[] = (tasksData || []).map(t => ({
-      ...t,
-      assignedToName: allUsers.find(u => u.id === t.assignedToEmployeeId)?.name || 'Unknown'
-    }));
-
-    const allAttendance: any[] = (attendanceData || []).map(a => ({
-      ...a,
-      employeeName: allUsers.find(u => u.id === a.employeeId)?.name || 'Unknown',
-      clockIn: a.checkInTime ? new Date(a.checkInTime).toLocaleTimeString() : 'N/A'
-    }));
-
     return (
       <div className="min-h-screen bg-background text-foreground pb-20">
         <AppNavbar currentUser={currentUser} onLogout={handleSignOut} />
-        
         <main className="container mx-auto px-4 pt-24 pb-12 max-w-7xl">
           {currentUser.role === 'admin' ? (
             <AdminView 
               users={allUsers} 
-              leaveRequests={allLeaves} 
-              tasks={allTasks} 
-              attendance={allAttendance}
+              leaveRequests={leavesData || []} 
+              tasks={tasksData || []} 
+              attendance={[]} 
               onUpdateLeave={updateLeaveStatus}
               onAssignTask={assignTask}
             />
           ) : (
             <EmployeeView 
               user={currentUser} 
-              attendance={allAttendance} 
-              tasks={allTasks} 
-              leaveRequests={allLeaves}
+              attendance={[]} 
+              tasks={tasksData || []} 
+              leaveRequests={leavesData || []}
               onRequestLeave={requestLeave}
             />
           )}
@@ -230,23 +212,18 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
         <div className="text-white space-y-6">
           <div className="w-20 h-20 rounded-3xl overflow-hidden shadow-2xl rotate-3 relative border border-white/20">
-            <Image 
-              src="https://img.sanishtech.com/u/ceb6a7135c1691ad1881a0eaea4200e9.jpg" 
-              alt="Logo" 
-              fill
-              className="object-cover"
-            />
+            <Image src="https://img.sanishtech.com/u/ceb6a7135c1691ad1881a0eaea4200e9.jpg" alt="Logo" fill className="object-cover" />
           </div>
           <h1 className="text-6xl font-black tracking-tight leading-tight">Wonderlight<br/><span className="text-accent">Adventure</span></h1>
-          <p className="text-xl text-white/80 max-w-md">Experience the pinnacle of luxury office management. Seamlessly track attendance, manage leaves, and coordinate teams.</p>
+          <p className="text-xl text-white/80 max-w-md">The pinnacle of luxury office management systems. Experience seamless coordination and executive oversight.</p>
         </div>
 
         <div className="space-y-6">
           {authMode === 'admin-login' ? (
             <Card className="border-none luxury-shadow backdrop-blur-2xl bg-white/90 animate-in fade-in slide-in-from-bottom-2">
               <CardHeader>
-                <CardTitle>Admin Login</CardTitle>
-                <CardDescription>Enter your administrative credentials</CardDescription>
+                <CardTitle>Executive Access</CardTitle>
+                <CardDescription>Enter administrative credentials to proceed.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -299,30 +276,16 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
                 </CardHeader>
                 <CardContent>
                   {authMode === 'initial' ? (
-                    <Button 
-                      onClick={() => setAuthMode('employee-options')} 
-                      variant="secondary" 
-                      className="w-full h-12 rounded-xl text-lg group"
-                    >
-                      Employee Login
+                    <Button onClick={() => setAuthMode('employee-options')} variant="secondary" className="w-full h-12 rounded-xl text-lg group">
+                      Employee Access
                       <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   ) : authMode === 'employee-options' ? (
                     <div className="grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-bottom-2">
-                      <Button onClick={() => setAuthMode('employee-login')} className="h-11 rounded-xl">
-                        Sign In
-                      </Button>
-                      <Button onClick={() => setAuthMode('employee-signup')} variant="outline" className="h-11 rounded-xl">
-                        Sign Up
-                      </Button>
-                      <Button 
-                        onClick={() => setAuthMode('initial')} 
-                        variant="ghost" 
-                        size="sm" 
-                        className="col-span-2 text-xs opacity-50 h-8"
-                      >
-                        <ArrowLeft className="mr-1 h-3 w-3" />
-                        Back
+                      <Button onClick={() => setAuthMode('employee-login')} className="h-11 rounded-xl">Sign In</Button>
+                      <Button onClick={() => setAuthMode('employee-signup')} variant="outline" className="h-11 rounded-xl">Sign Up</Button>
+                      <Button onClick={() => setAuthMode('initial')} variant="ghost" size="sm" className="col-span-2 text-xs opacity-50 h-8">
+                        <ArrowLeft className="mr-1 h-3 w-3" /> Back
                       </Button>
                     </div>
                   ) : (
@@ -355,7 +318,6 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
           )}
         </div>
       </div>
-      
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/50 text-sm">
         &copy; 2024 WonderlightAdventure Luxury Systems. All rights reserved.
       </div>
