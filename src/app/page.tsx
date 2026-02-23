@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppNavbar } from "@/components/layout/AppNavbar";
 import { EmployeeView } from "@/components/dashboard/EmployeeView";
 import { AdminView } from "@/components/dashboard/AdminView";
@@ -26,6 +26,17 @@ export default function Home() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Pre-fill admin credentials when switching to admin login
+  useEffect(() => {
+    if (authMode === 'admin-login') {
+      setEmail('wonderlightadventure@gmail.com');
+      setPassword('Dh123@');
+    } else if (authMode === 'initial') {
+      setEmail('');
+      setPassword('');
+    }
+  }, [authMode]);
 
   // Check if current user is admin or employee
   const adminRef = useMemoFirebase(() => user ? doc(db, 'admins', user.uid) : null, [db, user]);
@@ -168,7 +179,7 @@ export default function Home() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Email</Label>
-                  <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@wonderlight.com" />
+                  <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="wonderlightadventure@gmail.com" />
                 </div>
                 <div className="space-y-2">
                   <Label>Password</Label>
@@ -247,7 +258,7 @@ export default function Home() {
                       {authMode === 'employee-signup' && (
                         <div className="space-y-2">
                           <Label>Full Name</Label>
-                          <Input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Julian Sterling" />
+                          <Input type="text" value={name} onChange={setName} placeholder="Julian Sterling" />
                         </div>
                       )}
                       <div className="space-y-2">
