@@ -1,4 +1,3 @@
-
 "use client"
 
 import { Bell, User, LogOut, ArrowLeft } from "lucide-react";
@@ -68,27 +67,47 @@ export function AppNavbar({ currentUser, onLogout }: AppNavbarProps) {
       <div className="flex items-center gap-4">
         <DropdownMenu onOpenChange={(open) => open && markAllAsRead()}>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className={cn("h-5 w-5", unreadCount > 0 && "animate-bell text-accent")} />
+            <Button variant="ghost" size="icon" className="relative group">
+              <Bell className={cn(
+                "h-5 w-5 transition-colors", 
+                unreadCount > 0 ? "animate-bell text-accent" : "text-muted-foreground group-hover:text-primary"
+              )} />
               {unreadCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 w-4 h-4 p-0 flex items-center justify-center text-[10px] bg-primary">
+                <Badge className="absolute -top-1 -right-1 w-4 h-4 p-0 flex items-center justify-center text-[10px] bg-primary badge-pulse">
                   {unreadCount}
                 </Badge>
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden luxury-shadow">
-            <DropdownMenuLabel className="p-4 bg-muted/50 border-b">Executive Alerts</DropdownMenuLabel>
-            <ScrollArea className="h-64">
+          <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden luxury-shadow border-primary/10">
+            <DropdownMenuLabel className="p-4 bg-muted/50 border-b flex items-center justify-between">
+              <span>Executive Alerts</span>
+              {unreadCount > 0 && <Badge variant="outline" className="text-[10px] animate-luxury-pulse">{unreadCount} New</Badge>}
+            </DropdownMenuLabel>
+            <ScrollArea className="h-80">
               {!notifications || notifications.length === 0 ? (
-                <div className="p-8 text-center text-muted-foreground text-sm">No new updates</div>
+                <div className="p-8 text-center text-muted-foreground text-sm italic">
+                  No notifications recorded in the vault.
+                </div>
               ) : (
-                notifications.map((notif) => (
-                  <div key={notif.id} className={cn("p-4 border-b transition-colors", !notif.isRead && "bg-primary/5")}>
-                    <p className="font-semibold text-sm">{notif.type.replace('_', ' ').toUpperCase()}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{notif.message}</p>
-                    <p className="text-[10px] text-muted-foreground mt-2">
-                      {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                [...notifications].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((notif) => (
+                  <div 
+                    key={notif.id} 
+                    className={cn(
+                      "p-4 border-b transition-all duration-300", 
+                      !notif.isRead ? "bg-primary/5 border-l-4 border-l-accent" : "hover:bg-muted/30"
+                    )}
+                  >
+                    <div className="flex justify-between items-start mb-1">
+                      <p className="font-bold text-[10px] uppercase tracking-widest text-primary/70">
+                        {notif.type.replace('_', ' ')}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground font-medium">
+                        {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                    <p className={cn("text-xs leading-relaxed", !notif.isRead ? "text-foreground font-medium" : "text-muted-foreground")}>
+                      {notif.message}
                     </p>
                   </div>
                 ))
@@ -99,23 +118,25 @@ export function AppNavbar({ currentUser, onLogout }: AppNavbarProps) {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-3 pl-1 pr-3 rounded-full hover:bg-muted">
+            <Button variant="ghost" className="flex items-center gap-3 pl-1 pr-3 rounded-full hover:bg-muted transition-all duration-300">
               <Avatar className="h-8 w-8 border-2 border-primary/20">
                 <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
                 <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="text-left hidden lg:block">
                 <p className="text-sm font-semibold leading-none">{currentUser.name}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{currentUser.role.toUpperCase()}</p>
+                <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-tighter font-bold">{currentUser.role}</p>
               </div>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 luxury-shadow">
-            <DropdownMenuLabel>My Portfolio</DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="w-56 luxury-shadow border-primary/10">
+            <DropdownMenuLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground px-4 py-2">
+              My Portfolio
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onLogout} className="text-destructive focus:bg-destructive focus:text-destructive-foreground">
+            <DropdownMenuItem onClick={onLogout} className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer px-4 py-2">
               <LogOut className="mr-2 h-4 w-4" />
-              <span>Log out</span>
+              <span className="font-medium">Secure Logout</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
