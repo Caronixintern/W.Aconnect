@@ -16,6 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Role, User as UserType } from "@/lib/types";
 import { useOfficeData } from "@/hooks/use-office-data";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface AppNavbarProps {
   currentUser: UserType;
@@ -41,8 +42,13 @@ export function AppNavbar({ currentUser, onLogout }: AppNavbarProps) {
         </Button>
         
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 gold-gradient rounded-xl flex items-center justify-center shadow-lg transform rotate-3">
-            <span className="text-white font-bold text-xl">WA</span>
+          <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg transform rotate-3 relative border border-primary/20">
+            <Image 
+              src="https://img.sanishtech.com/u/ceb6a7135c1691ad1881a0eaea4200e9.jpg" 
+              alt="Logo" 
+              fill
+              className="object-cover"
+            />
           </div>
           <span className="text-xl font-bold tracking-tight text-primary hidden sm:block">WonderlightAdventure</span>
         </div>

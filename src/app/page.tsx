@@ -14,6 +14,7 @@ import { ShieldCheck, UserCircle2, ArrowRight, ArrowLeft, Loader2 } from "lucide
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase, initiateEmailSignUp, initiateEmailSignIn, setDocumentNonBlocking } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
+import Image from "next/image";
 
 export default function Home() {
   const auth = useAuth();
@@ -145,8 +146,13 @@ export default function Home() {
     <div className="min-h-screen gold-gradient flex flex-col items-center justify-center p-6 bg-fixed bg-cover">
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
         <div className="text-white space-y-6">
-          <div className="w-20 h-20 bg-white/10 backdrop-blur-xl rounded-3xl flex items-center justify-center border border-white/20 shadow-2xl rotate-3">
-            <span className="text-4xl font-black italic">WA</span>
+          <div className="w-20 h-20 rounded-3xl overflow-hidden shadow-2xl rotate-3 relative border border-white/20">
+            <Image 
+              src="https://img.sanishtech.com/u/ceb6a7135c1691ad1881a0eaea4200e9.jpg" 
+              alt="Logo" 
+              fill
+              className="object-cover"
+            />
           </div>
           <h1 className="text-6xl font-black tracking-tight leading-tight">Wonderlight<br/><span className="text-accent">Adventure</span></h1>
           <p className="text-xl text-white/80 max-w-md">Experience the pinnacle of luxury office management. Seamlessly track attendance, manage leaves, and coordinate teams.</p>
@@ -207,7 +213,7 @@ export default function Home() {
                       <CardDescription>Personal dashboard and team sync</CardDescription>
                     </div>
                   </div>
-                </CardHeader>
+                </Header>
                 <CardContent>
                   {authMode === 'initial' ? (
                     <Button 
