@@ -1,6 +1,6 @@
 "use client"
 
-import { Bell, User, LogOut, LayoutDashboard, Calendar, ClipboardList, Settings } from "lucide-react";
+import { Bell, User, LogOut, LayoutDashboard, Calendar, ClipboardList, Settings, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -29,12 +29,22 @@ export function AppNavbar({ currentUser, onLogout }: AppNavbarProps) {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 h-16 glass-card px-6 flex items-center justify-between">
-      <div className="flex items-center gap-8">
+      <div className="flex items-center gap-6">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onLogout}
+          className="rounded-full hover:bg-primary/10 hover:text-primary transition-all"
+          title="Return to Home"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 gold-gradient rounded-xl flex items-center justify-center shadow-lg transform rotate-3">
             <span className="text-white font-bold text-xl">OZ</span>
           </div>
-          <span className="text-xl font-bold tracking-tight text-primary">OfficeZenith</span>
+          <span className="text-xl font-bold tracking-tight text-primary hidden sm:block">OfficeZenith</span>
         </div>
       </div>
 
@@ -85,7 +95,7 @@ export function AppNavbar({ currentUser, onLogout }: AppNavbarProps) {
                 <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
                 <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
               </Avatar>
-              <div className="text-left hidden sm:block">
+              <div className="text-left hidden lg:block">
                 <p className="text-sm font-semibold leading-none">{currentUser.name}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{currentUser.role.toUpperCase()}</p>
               </div>
