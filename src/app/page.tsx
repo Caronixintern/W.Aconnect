@@ -1,11 +1,10 @@
-
 "use client"
 
 import { useState, useEffect } from "react";
 import { AppNavbar } from "@/components/layout/AppNavbar";
 import { EmployeeView } from "@/components/dashboard/EmployeeView";
 import { AdminView } from "@/components/dashboard/AdminView";
-import { User as AppUser } from "@/lib/types";
+import { User as AppUser, Task } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,7 +20,8 @@ import {
   initiateEmailSignUp, 
   initiateEmailSignIn, 
   setDocumentNonBlocking,
-  updateDocumentNonBlocking
+  updateDocumentNonBlocking,
+  deleteDocumentNonBlocking
 } from "@/firebase";
 import { doc, collection, query } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
@@ -200,6 +200,31 @@ export default function Home() {
     toast({ title: "Task Assigned", description: "The task has been successfully delegated." });
   };
 
+  const updateTaskStatus = (id: string, status: Task['status']) => {
+    const task = (masterTasks || []).find(t => t.id === id);
+    if (!task) return;
+
+    const updateData = { 
+      status, 
+      completionDate: status === 'completed' ? new Date().toISOString() : null
+    };
+    
+    updateDocumentNonBlocking(doc(db, 'tasks', id), updateData);
+    updateDocumentNonBlocking(doc(db, 'employees', task.assignedToEmployeeId, 'tasks', id), updateData);
+
+    toast({ title: "Task Updated", description: `Status changed to ${status}.` });
+  };
+
+  const deleteTask = (id: string) => {
+    const task = (masterTasks || []).find(t => t.id === id);
+    if (!task) return;
+
+    deleteDocumentNonBlocking(doc(db, 'tasks', id));
+    deleteDocumentNonBlocking(doc(db, 'employees', task.assignedToEmployeeId, 'tasks', id));
+
+    toast({ title: "Task Deleted", description: "The work item has been removed." });
+  };
+
   const requestLeave = (leaveData: any) => {
     const leaveId = `leave-${Date.now()}`;
     const fullLeave = {
@@ -289,6 +314,8 @@ export default function Home() {
               attendance={[]} 
               onUpdateLeave={updateLeaveStatus}
               onAssignTask={assignTask}
+              onUpdateTaskStatus={updateTaskStatus}
+              onDeleteTask={deleteTask}
             />
           ) : (
             <EmployeeView 

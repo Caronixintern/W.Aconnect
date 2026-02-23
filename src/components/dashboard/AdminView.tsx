@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react";
@@ -12,13 +11,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Users, CalendarCheck, Clock, ClipboardList, TrendingUp, CheckCircle2, XCircle, Sparkles, Search, ArrowLeft, LayoutDashboard, UserCog, Mail, Phone, Image as ImageIcon, Shield, Activity } from "lucide-react";
+import { Users, CalendarCheck, Clock, ClipboardList, TrendingUp, CheckCircle2, XCircle, Sparkles, Search, ArrowLeft, LayoutDashboard, UserCog, Mail, Phone, Image as ImageIcon, Shield, Activity, Trash2, MoreHorizontal } from "lucide-react";
 import { adminDailyBriefing, AdminDailyBriefingOutput } from "@/ai/flows/admin-daily-briefing-flow";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { EmployeeView } from "./EmployeeView";
 import { useFirestore, setDocumentNonBlocking } from "@/firebase";
 import { doc } from "firebase/firestore";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface AdminViewProps {
   currentUser: User;
@@ -28,9 +35,21 @@ interface AdminViewProps {
   attendance: AttendanceRecord[];
   onUpdateLeave: (id: string, status: LeaveRequest['status']) => void;
   onAssignTask: (task: any) => void;
+  onUpdateTaskStatus: (id: string, status: Task['status']) => void;
+  onDeleteTask: (id: string) => void;
 }
 
-export function AdminView({ currentUser, users, leaveRequests, tasks, attendance, onUpdateLeave, onAssignTask }: AdminViewProps) {
+export function AdminView({ 
+  currentUser, 
+  users, 
+  leaveRequests, 
+  tasks, 
+  attendance, 
+  onUpdateLeave, 
+  onAssignTask,
+  onUpdateTaskStatus,
+  onDeleteTask
+}: AdminViewProps) {
   const db = useFirestore();
   const [briefing, setBriefing] = useState<AdminDailyBriefingOutput | null>(null);
   const [isGeneratingBriefing, setIsGeneratingBriefing] = useState(false);
@@ -211,7 +230,7 @@ export function AdminView({ currentUser, users, leaveRequests, tasks, attendance
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Efficiency Index</p>
-                <h3 className="text-3xl font-bold">0%</h3>
+                <h3 className="text-3xl font-bold">{(tasks.length > 0 ? (tasks.filter(t => t.status === 'completed').length / tasks.length * 100).toFixed(0) : 0)}%</h3>
               </div>
               <div className="p-3 bg-orange-50 rounded-xl text-orange-600"><TrendingUp className="h-6 w-6" /></div>
             </div>
@@ -355,12 +374,13 @@ export function AdminView({ currentUser, users, leaveRequests, tasks, attendance
                         <TableHead>Assignee</TableHead>
                         <TableHead>Due Date</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Manage</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {tasks.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">No tasks assigned yet.</TableCell>
+                          <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">No tasks assigned yet.</TableCell>
                         </TableRow>
                       ) : (
                         tasks.map(task => (
@@ -369,7 +389,30 @@ export function AdminView({ currentUser, users, leaveRequests, tasks, attendance
                             <TableCell>{users.find(u => u.id === task.assignedToEmployeeId)?.name || 'Unknown'}</TableCell>
                             <TableCell className="text-xs">{task.dueDate}</TableCell>
                             <TableCell>
-                              <Badge variant={task.status === 'completed' ? 'default' : 'outline'}>{task.status}</Badge>
+                              <Badge variant={task.status === 'completed' ? 'default' : 'outline'}>{task.status.toUpperCase()}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex gap-2 justify-end">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Change Status</DropdownMenuLabel>
+                                    <DropdownMenuItem onClick={() => onUpdateTaskStatus(task.id, 'todo')}>To Do</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => onUpdateTaskStatus(task.id, 'in-progress')}>In Progress</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => onUpdateTaskStatus(task.id, 'completed')}>Completed</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => onUpdateTaskStatus(task.id, 'canceled')}>Canceled</DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => onDeleteTask(task.id)} className="text-destructive">
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Delete Task
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))
