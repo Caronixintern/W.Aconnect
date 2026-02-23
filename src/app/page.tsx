@@ -335,7 +335,7 @@ export default function Home() {
     <div className="min-h-screen gold-gradient flex flex-col items-center justify-center p-6 bg-fixed bg-cover">
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
         <div className="text-white space-y-6">
-          <div className="w-20 h-20 rounded-3xl overflow-hidden shadow-2xl rotate-3 relative border border-white/20">
+          <div className="w-24 h-24 rounded-full overflow-hidden shadow-2xl relative border-2 border-white/30 bg-white">
             <Image src="https://img.sanishtech.com/u/ceb6a7135c1691ad1881a0eaea4200e9.jpg" alt="Logo" fill className="object-cover" />
           </div>
           <h1 className="text-6xl font-black tracking-tight leading-tight">Wonderlight<br/><span className="text-accent">Adventure</span></h1>

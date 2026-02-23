@@ -57,7 +57,7 @@ export function AppNavbar({ currentUser, onLogout }: AppNavbarProps) {
         </Button>
         
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg transform rotate-3 relative border border-primary/20">
+          <div className="w-10 h-10 rounded-full overflow-hidden shadow-lg relative border border-primary/20 bg-white">
             <Image src="https://img.sanishtech.com/u/ceb6a7135c1691ad1881a0eaea4200e9.jpg" alt="Logo" fill className="object-cover" />
           </div>
           <span className="text-xl font-bold tracking-tight text-primary hidden sm:block">WonderlightAdventure</span>
