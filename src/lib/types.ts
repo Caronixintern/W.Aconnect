@@ -19,19 +19,24 @@ export interface LeaveRequest {
   reason: string;
   status: 'pending' | 'approved' | 'rejected';
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  createdAt: string;
+  requestDate: string;
+  adminId?: string;
+  adminActionDate?: string;
+  adminComment?: string;
 }
 
 export interface Task {
   id: string;
   title: string;
   description: string;
-  assignedToId: string;
+  assignedToEmployeeId: string;
   assignedToName: string;
-  assignedById: string;
+  assignedByAdminId: string;
+  assignmentDate: string;
   dueDate: string;
-  status: 'todo' | 'in-progress' | 'completed';
+  status: 'todo' | 'in-progress' | 'completed' | 'canceled';
   priority: 'low' | 'medium' | 'high';
+  completionDate?: string;
 }
 
 export interface AttendanceRecord {
@@ -39,17 +44,19 @@ export interface AttendanceRecord {
   employeeId: string;
   employeeName: string;
   date: string;
-  clockIn: string;
-  clockOut?: string;
+  checkInTime: string;
+  checkOutTime?: string;
   status: 'present' | 'absent' | 'late' | 'half-day';
 }
 
 export interface Notification {
   id: string;
-  userId: string;
-  title: string;
+  recipientEmployeeId?: string;
+  recipientAdminId?: string;
   message: string;
-  type: 'leave_status' | 'task_assigned' | 'announcement';
-  read: boolean;
+  type: string;
+  isRead: boolean;
   createdAt: string;
+  relatedEntityId?: string;
+  relatedEntityType?: string;
 }

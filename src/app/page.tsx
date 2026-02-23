@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, use } from "react";
@@ -65,7 +64,10 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
   const { data: tasksData } = useCollection(allTasksQuery);
 
   const handleAuth = (mode: 'signin' | 'signup', role: 'employee' | 'admin') => {
-    if (!email || !password) {
+    const targetEmail = email || (role === 'admin' ? 'qwer@gmail.com' : '');
+    const targetPassword = password || (role === 'admin' ? 'Dh123@' : '');
+
+    if (!targetEmail || !targetPassword) {
       toast({ title: "Error", description: "Please enter email and password.", variant: "destructive" });
       return;
     }
@@ -76,28 +78,29 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
 
     setIsProcessing(true);
     const authPromise = mode === 'signup' 
-      ? initiateEmailSignUp(auth, email, password) 
-      : initiateEmailSignIn(auth, email, password);
+      ? initiateEmailSignUp(auth, targetEmail, targetPassword) 
+      : initiateEmailSignIn(auth, targetEmail, targetPassword);
 
     authPromise
       .then((userCredential) => {
-        if (mode === 'signup' || (mode === 'signin' && role === 'admin' && email === 'qwer@gmail.com')) {
+        const isAdminAccount = targetEmail === 'qwer@gmail.com' || targetEmail === 'wonderlightadventure@gmail.com';
+        if (mode === 'signup' || (mode === 'signin' && (role === 'admin' || isAdminAccount))) {
           const names = name.split(' ');
           const profileData = {
             id: userCredential.user.uid,
-            firstName: names[0] || (role === 'employee' ? 'Employee' : 'Executive'),
-            lastName: names.slice(1).join(' ') || (role === 'employee' ? 'User' : 'Admin'),
-            email: email,
+            firstName: names[0] || (isAdminAccount ? 'Executive' : 'Employee'),
+            lastName: names.slice(1).join(' ') || (isAdminAccount ? 'Admin' : 'User'),
+            email: targetEmail,
             phoneNumber: '',
-            ...(role === 'employee' ? {
+            ...(isAdminAccount ? {} : {
               employeeNumber: `EMP-${Math.floor(Math.random() * 10000)}`,
               dateOfJoining: new Date().toISOString().split('T')[0],
               leaveBalance: 0,
               teamId: 'General'
-            } : {})
+            })
           };
 
-          const collectionName = role === 'employee' ? 'employees' : 'admins';
+          const collectionName = isAdminAccount ? 'admins' : 'employees';
           setDocumentNonBlocking(doc(db, collectionName, userCredential.user.uid), profileData, { merge: true });
         }
         setIsProcessing(false);
@@ -120,7 +123,12 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
     const leave = (leavesData || []).find(l => l.id === id);
     if (!leave) return;
 
-    const updateData = { status, adminId: user?.uid, adminActionDate: new Date().toISOString() };
+    const updateData = { 
+      status, 
+      adminId: user?.uid, 
+      adminActionDate: new Date().toISOString() 
+    };
+    
     updateDocumentNonBlocking(doc(db, 'leaveRequests', id), updateData);
     updateDocumentNonBlocking(doc(db, 'employees', leave.employeeId, 'leaveRequests', id), updateData);
     
@@ -155,7 +163,9 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
     setDocumentNonBlocking(doc(db, 'employees', user?.uid!, 'leaveRequests', leaveId), fullLeave, { merge: true });
   };
 
-  if (isUserLoading || (user && (isAdminLoading || isEmployeeLoading))) {
+  const isAdminAccount = user?.email === 'qwer@gmail.com' || user?.email === 'wonderlightadventure@gmail.com';
+
+  if (isUserLoading || (user && !isAdminAccount && (isAdminLoading || isEmployeeLoading))) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -164,7 +174,7 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
   }
 
   if (user) {
-    const isActuallyAdmin = !!adminProfile || user.email === 'qwer@gmail.com';
+    const isActuallyAdmin = !!adminProfile || isAdminAccount;
     const currentUser: AppUser = {
       id: user.uid,
       name: adminProfile ? `${adminProfile.firstName} ${adminProfile.lastName}` : (employeeProfile ? `${employeeProfile.firstName} ${employeeProfile.lastName}` : user.email?.split('@')[0] || 'User'),

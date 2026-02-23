@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react";
@@ -12,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Users, CalendarCheck, Clock, ClipboardList, TrendingUp, CheckCircle2, XCircle, Sparkles, Plus, Search } from "lucide-react";
+import { Users, CalendarCheck, Clock, ClipboardList, TrendingUp, CheckCircle2, XCircle, Sparkles, Search } from "lucide-react";
 import { adminDailyBriefing, AdminDailyBriefingOutput } from "@/ai/flows/admin-daily-briefing-flow";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -42,9 +41,10 @@ export function AdminView({ users, leaveRequests, tasks, attendance, onUpdateLea
 
   useEffect(() => {
     generateBriefing();
-  }, []);
+  }, [tasks.length, leaveRequests.length]);
 
   const generateBriefing = async () => {
+    if (isGeneratingBriefing) return;
     setIsGeneratingBriefing(true);
     try {
       const result = await adminDailyBriefing({
@@ -54,17 +54,17 @@ export function AdminView({ users, leaveRequests, tasks, attendance, onUpdateLea
             id: t.id, 
             title: t.title, 
             dueDate: t.dueDate, 
-            assignedTo: users.find(u => u.id === t.assignedToId)?.name || 'Unknown' 
+            assignedTo: users.find(u => u.id === t.assignedToEmployeeId)?.name || 'Unknown' 
           })),
         highPriorityLeaveRequests: leaveRequests
-          .filter(l => l.status === 'pending' && (l.priority === 'high' || l.priority === 'urgent'))
+          .filter(l => l.status === 'pending')
           .map(l => ({ 
             id: l.id, 
             employeeName: users.find(u => u.id === l.employeeId)?.name || 'Unknown', 
             startDate: l.startDate, 
             endDate: l.endDate, 
             reason: l.reason, 
-            priority: l.priority 
+            priority: 'High' 
           })),
         attendanceAnomalies: attendance
           .filter(a => a.status === 'late' || a.status === 'absent')
@@ -241,7 +241,6 @@ export function AdminView({ users, leaveRequests, tasks, attendance, onUpdateLea
                         <TableHead>Employee</TableHead>
                         <TableHead>Requested Dates</TableHead>
                         <TableHead>Justification</TableHead>
-                        <TableHead>Urgency</TableHead>
                         <TableHead className="text-right">Decision</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -258,7 +257,6 @@ export function AdminView({ users, leaveRequests, tasks, attendance, onUpdateLea
                             </TableCell>
                             <TableCell className="text-xs whitespace-nowrap">{leave.startDate} to {leave.endDate}</TableCell>
                             <TableCell className="max-w-[200px] truncate">{leave.reason}</TableCell>
-                            <TableCell><Badge variant="outline">{leave.priority}</Badge></TableCell>
                             <TableCell className="text-right">
                               <div className="flex gap-2 justify-end">
                                 <Button size="sm" className="h-8 rounded-lg bg-green-500 hover:bg-green-600" onClick={() => onUpdateLeave(leave.id, 'approved')}>
@@ -268,6 +266,41 @@ export function AdminView({ users, leaveRequests, tasks, attendance, onUpdateLea
                                   <XCircle className="h-4 w-4" />
                                 </Button>
                               </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="tasks" className="mt-6">
+              <Card className="border-none luxury-shadow">
+                <CardContent className="pt-6">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Task Title</TableHead>
+                        <TableHead>Assignee</TableHead>
+                        <TableHead>Due Date</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {tasks.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">No tasks assigned yet.</TableCell>
+                        </TableRow>
+                      ) : (
+                        tasks.map(task => (
+                          <TableRow key={task.id}>
+                            <TableCell className="font-semibold">{task.title}</TableCell>
+                            <TableCell>{users.find(u => u.id === task.assignedToEmployeeId)?.name || 'Unknown'}</TableCell>
+                            <TableCell className="text-xs">{task.dueDate}</TableCell>
+                            <TableCell>
+                              <Badge variant={task.status === 'completed' ? 'default' : 'outline'}>{task.status}</Badge>
                             </TableCell>
                           </TableRow>
                         ))

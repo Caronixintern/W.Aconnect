@@ -40,7 +40,7 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
     priority: 'medium' as any
   });
 
-  const myTasks = tasks.filter(t => t.assignedToId === user.id);
+  const myTasks = tasks.filter(t => t.assignedToEmployeeId === user.id);
   const myAttendance = attendance.filter(a => a.employeeId === user.id);
   const myLeaves = leaveRequests.filter(l => l.employeeId === user.id);
 
@@ -64,8 +64,6 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
     const lastName = names.slice(1).join(' ') || '';
 
     const employeeRef = doc(db, 'employees', user.id);
-    // Use setDocumentNonBlocking with merge to handle both update and creation
-    // Including 'id' is critical to satisfy security rules
     setDocumentNonBlocking(employeeRef, {
       id: user.id,
       firstName,
@@ -338,7 +336,6 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
                     <TableRow>
                       <TableHead>Dates</TableHead>
                       <TableHead>Reason</TableHead>
-                      <TableHead>Priority</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -352,9 +349,6 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
                         <TableRow key={leave.id}>
                           <TableCell className="font-medium">{leave.startDate} to {leave.endDate}</TableCell>
                           <TableCell className="max-w-[200px] truncate">{leave.reason}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{leave.priority}</Badge>
-                          </TableCell>
                           <TableCell>
                             <Badge className={cn(
                               leave.status === 'approved' ? 'bg-green-500' : 
@@ -393,8 +387,8 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
                   {myAttendance.map(record => (
                     <TableRow key={record.id}>
                       <TableCell className="font-medium">{record.date}</TableCell>
-                      <TableCell>{record.clockIn}</TableCell>
-                      <TableCell>{record.clockOut || 'Pending'}</TableCell>
+                      <TableCell>{record.checkInTime}</TableCell>
+                      <TableCell>{record.checkOutTime || 'Pending'}</TableCell>
                       <TableCell>
                         <Badge variant={record.status === 'present' ? 'default' : 'outline'} className={record.status === 'present' ? 'bg-green-500' : ''}>
                           {record.status}
