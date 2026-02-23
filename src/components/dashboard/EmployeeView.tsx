@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { User, AttendanceRecord, Task, LeaveRequest } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,6 +27,7 @@ interface EmployeeViewProps {
 export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequestLeave }: EmployeeViewProps) {
   const db = useFirestore();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  
   const [profileForm, setProfileForm] = useState({
     name: user.name,
     phone: user.phone,
@@ -41,6 +42,19 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
     reason: '',
     priority: 'medium' as any
   });
+
+  // Sync form with user prop when not editing
+  useEffect(() => {
+    if (!isEditingProfile) {
+      setProfileForm({
+        name: user.name,
+        phone: user.phone,
+        team: user.team,
+        employeeNumber: user.employeeNumber || '',
+        dateOfJoining: user.dateOfJoining || ''
+      });
+    }
+  }, [user, isEditingProfile]);
 
   const myTasks = tasks.filter(t => t.assignedToEmployeeId === user.id);
   const myAttendance = attendance.filter(a => a.employeeId === user.id);
@@ -61,23 +75,27 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
   };
 
   const handleSaveProfile = () => {
-    const names = profileForm.name.split(' ');
-    const firstName = names[0] || '';
+    const names = profileForm.name.trim().split(/\s+/);
+    const firstName = names[0] || 'User';
     const lastName = names.slice(1).join(' ') || '';
 
     const employeeRef = doc(db, 'employees', user.id);
-    setDocumentNonBlocking(employeeRef, {
+    const updatedData = {
       id: user.id,
       firstName,
       lastName,
+      email: user.email,
       phoneNumber: profileForm.phone,
       teamId: profileForm.team,
       employeeNumber: profileForm.employeeNumber,
-      dateOfJoining: profileForm.dateOfJoining
-    }, { merge: true });
+      dateOfJoining: profileForm.dateOfJoining,
+      leaveBalance: 0 // Default balance
+    };
+
+    setDocumentNonBlocking(employeeRef, updatedData, { merge: true });
     
     setIsEditingProfile(false);
-    toast({ title: "Profile Updated", description: "The professional profile has been synchronized." });
+    toast({ title: "Profile Updated", description: "The professional profile has been synchronized with the executive database." });
   };
 
   return (
@@ -101,7 +119,7 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
                   onClick={() => setIsEditingProfile(true)}
                 >
                   <UserCog className="h-4 w-4 mr-2" />
-                  Edit Dashboard
+                  Edit Portfolio
                 </Button>
               ) : (
                 <div className="flex gap-2">
@@ -112,22 +130,13 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
                     onClick={handleSaveProfile}
                   >
                     <Check className="h-4 w-4 mr-2" />
-                    Save Changes
+                    Save Sync
                   </Button>
                   <Button 
                     variant="secondary" 
                     size="sm" 
                     className="rounded-full bg-red-500/80 backdrop-blur-md border-white/30 text-white hover:bg-red-600"
-                    onClick={() => {
-                      setIsEditingProfile(false);
-                      setProfileForm({ 
-                        name: user.name, 
-                        phone: user.phone, 
-                        team: user.team, 
-                        employeeNumber: user.employeeNumber || '', 
-                        dateOfJoining: user.dateOfJoining || '' 
-                      });
-                    }}
+                    onClick={() => setIsEditingProfile(false)}
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -137,28 +146,31 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
           </div>
           <CardContent className="pt-16 pb-8 px-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-              <div className="space-y-1">
+              <div className="space-y-1 w-full max-w-md">
                 {isEditingProfile ? (
                   <div className="space-y-2">
-                    <Label className="text-[10px] uppercase text-muted-foreground">Full Name</Label>
+                    <Label className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest">Full Name</Label>
                     <Input 
                       value={profileForm.name} 
                       onChange={e => setProfileForm({...profileForm, name: e.target.value})}
-                      className="text-xl font-bold h-10 w-full max-w-md"
+                      className="text-xl font-bold h-11 w-full bg-white/50"
+                      placeholder="e.g. Julian Sterling"
                     />
                   </div>
                 ) : (
                   <h1 className="text-3xl font-bold tracking-tight text-primary">{user.name}</h1>
                 )}
-                <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="flex items-center gap-2 text-muted-foreground mt-2">
                   <Briefcase className="h-4 w-4" />
                   {isEditingProfile ? (
-                    <Input 
-                      value={profileForm.team} 
-                      onChange={e => setProfileForm({...profileForm, team: e.target.value})}
-                      className="h-8 text-sm max-w-[200px]"
-                      placeholder="Division"
-                    />
+                    <div className="flex-1">
+                      <Input 
+                        value={profileForm.team} 
+                        onChange={e => setProfileForm({...profileForm, team: e.target.value})}
+                        className="h-9 text-sm bg-white/50"
+                        placeholder="Division/Team Name"
+                      />
+                    </div>
                   ) : (
                     <span>{user.team}</span>
                   )}
@@ -191,7 +203,8 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
                     <Input 
                       value={profileForm.employeeNumber} 
                       onChange={e => setProfileForm({...profileForm, employeeNumber: e.target.value})}
-                      className="h-8 text-xs max-w-[120px]"
+                      className="h-8 text-xs max-w-[120px] bg-white/50 mt-1"
+                      placeholder="EMP-0000"
                     />
                   ) : (
                     <p className="font-medium truncate max-w-[120px]">{user.employeeNumber || 'Not assigned'}</p>
@@ -210,7 +223,8 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
                     <Input 
                       value={profileForm.phone} 
                       onChange={e => setProfileForm({...profileForm, phone: e.target.value})}
-                      className="h-8 text-xs max-w-[150px]"
+                      className="h-8 text-xs max-w-[150px] bg-white/50 mt-1"
+                      placeholder="+1 (000) 000-0000"
                     />
                   ) : (
                     <p className="font-medium">{user.phone || 'Not set'}</p>
@@ -226,7 +240,7 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
                       type="date"
                       value={profileForm.dateOfJoining} 
                       onChange={e => setProfileForm({...profileForm, dateOfJoining: e.target.value})}
-                      className="h-8 text-xs max-w-[150px]"
+                      className="h-8 text-xs max-w-[150px] bg-white/50 mt-1"
                     />
                   ) : (
                     <p className="font-medium">{user.dateOfJoining || 'Jan 2023'}</p>
