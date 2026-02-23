@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from "react";
@@ -9,11 +8,12 @@ import { useOfficeData } from "@/hooks/use-office-data";
 import { User } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ShieldCheck, UserCircle2, ArrowRight } from "lucide-react";
+import { ShieldCheck, UserCircle2, ArrowRight, ArrowLeft } from "lucide-react";
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [employeeAuthMode, setEmployeeAuthMode] = useState<'initial' | 'options'>('initial');
   
   const { 
     users, 
@@ -36,6 +36,7 @@ export default function Home() {
   const handleLogout = () => {
     setIsAuthenticated(false);
     setCurrentUser(null);
+    setEmployeeAuthMode('initial');
   };
 
   if (!isAuthenticated || !currentUser) {
@@ -80,10 +81,34 @@ export default function Home() {
                 </div>
               </CardHeader>
               <CardContent>
-                <Button onClick={() => handleLogin('employee')} variant="secondary" className="w-full h-12 rounded-xl text-lg group">
-                  Employee Login
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
+                {employeeAuthMode === 'initial' ? (
+                  <Button 
+                    onClick={() => setEmployeeAuthMode('options')} 
+                    variant="secondary" 
+                    className="w-full h-12 rounded-xl text-lg group"
+                  >
+                    Employee Access
+                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-bottom-2">
+                    <Button onClick={() => handleLogin('employee')} className="h-11 rounded-xl">
+                      Sign In
+                    </Button>
+                    <Button onClick={() => handleLogin('employee')} variant="outline" className="h-11 rounded-xl">
+                      Sign Up
+                    </Button>
+                    <Button 
+                      onClick={() => setEmployeeAuthMode('initial')} 
+                      variant="ghost" 
+                      size="sm" 
+                      className="col-span-2 text-xs opacity-50 h-8"
+                    >
+                      <ArrowLeft className="mr-1 h-3 w-3" />
+                      Back
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
