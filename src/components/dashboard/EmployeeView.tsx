@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react";
@@ -10,9 +11,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Clock, ClipboardList, Send, Briefcase, Mail, Phone, Hash } from "lucide-react";
+import { Calendar, Clock, ClipboardList, Send, Briefcase, Mail, Phone, Hash, UserCog, Check, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useFirestore, updateDocumentNonBlocking } from "@/firebase";
+import { doc } from "firebase/firestore";
 
 interface EmployeeViewProps {
   user: User;
@@ -23,6 +26,14 @@ interface EmployeeViewProps {
 }
 
 export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequestLeave }: EmployeeViewProps) {
+  const db = useFirestore();
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    name: user.name,
+    phone: user.phone,
+    team: user.team
+  });
+
   const [leaveForm, setLeaveForm] = useState({
     startDate: '',
     endDate: '',
@@ -48,6 +59,23 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
     toast({ title: "Success", description: "Leave request submitted successfully." });
   };
 
+  const handleSaveProfile = () => {
+    const names = profileForm.name.split(' ');
+    const firstName = names[0] || '';
+    const lastName = names.slice(1).join(' ') || '';
+
+    const employeeRef = doc(db, 'employees', user.id);
+    updateDocumentNonBlocking(employeeRef, {
+      firstName,
+      lastName,
+      phoneNumber: profileForm.phone,
+      teamId: profileForm.team
+    });
+    
+    setIsEditingProfile(false);
+    toast({ title: "Profile Updated", description: "Your professional profile has been synchronized." });
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -60,16 +88,76 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
                 </div>
               </div>
             </div>
+            <div className="absolute top-4 right-4">
+              {!isEditingProfile ? (
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  className="rounded-full bg-white/20 backdrop-blur-md border-white/30 text-white hover:bg-white/40"
+                  onClick={() => setIsEditingProfile(true)}
+                >
+                  <UserCog className="h-4 w-4 mr-2" />
+                  Edit Dashboard
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    className="rounded-full bg-green-500/80 backdrop-blur-md border-white/30 text-white hover:bg-green-600"
+                    onClick={handleSaveProfile}
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Save Changes
+                  </Button>
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    className="rounded-full bg-red-500/80 backdrop-blur-md border-white/30 text-white hover:bg-red-600"
+                    onClick={() => {
+                      setIsEditingProfile(false);
+                      setProfileForm({ name: user.name, phone: user.phone, team: user.team });
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
           <CardContent className="pt-16 pb-8 px-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight text-primary">{user.name}</h1>
-                <div className="flex items-center gap-2 text-muted-foreground mt-1">
+              <div className="space-y-1">
+                {isEditingProfile ? (
+                  <div className="space-y-2">
+                    <Label className="text-[10px] uppercase text-muted-foreground">Full Name</Label>
+                    <Input 
+                      value={profileForm.name} 
+                      onChange={e => setProfileForm({...profileForm, name: e.target.value})}
+                      className="text-xl font-bold h-10 w-full max-w-md"
+                    />
+                  </div>
+                ) : (
+                  <h1 className="text-3xl font-bold tracking-tight text-primary">{user.name}</h1>
+                )}
+                <div className="flex items-center gap-2 text-muted-foreground">
                   <Briefcase className="h-4 w-4" />
-                  <span>{user.team}</span>
-                  <span className="mx-1">•</span>
-                  <Badge variant="outline" className="text-primary border-primary/20">Active Employee</Badge>
+                  {isEditingProfile ? (
+                    <Input 
+                      value={profileForm.team} 
+                      onChange={e => setProfileForm({...profileForm, team: e.target.value})}
+                      className="h-8 text-sm max-w-[200px]"
+                      placeholder="Team Name"
+                    />
+                  ) : (
+                    <span>{user.team}</span>
+                  )}
+                  {!isEditingProfile && (
+                    <>
+                      <span className="mx-1">•</span>
+                      <Badge variant="outline" className="text-primary border-primary/20">Active Employee</Badge>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4 w-full md:w-auto">
@@ -87,7 +175,7 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-muted rounded-lg text-primary"><Hash className="h-4 w-4" /></div>
-                <div><p className="text-xs text-muted-foreground">Employee ID</p><p className="font-medium">{user.id}</p></div>
+                <div><p className="text-xs text-muted-foreground">Employee ID</p><p className="font-medium truncate max-w-[120px]">{user.id}</p></div>
               </div>
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-muted rounded-lg text-primary"><Mail className="h-4 w-4" /></div>
@@ -95,7 +183,18 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
               </div>
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-muted rounded-lg text-primary"><Phone className="h-4 w-4" /></div>
-                <div><p className="text-xs text-muted-foreground">Phone</p><p className="font-medium">{user.phone}</p></div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Phone</p>
+                  {isEditingProfile ? (
+                    <Input 
+                      value={profileForm.phone} 
+                      onChange={e => setProfileForm({...profileForm, phone: e.target.value})}
+                      className="h-8 text-xs max-w-[150px]"
+                    />
+                  ) : (
+                    <p className="font-medium">{user.phone || 'Not set'}</p>
+                  )}
+                </div>
               </div>
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-muted rounded-lg text-primary"><Calendar className="h-4 w-4" /></div>
