@@ -11,11 +11,18 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Clock, ClipboardList, Send, Briefcase, Mail, Phone, Hash, UserCog, Check, X, LogOut, Image as ImageIcon } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, ClipboardList, Send, Briefcase, Mail, Phone, Hash, UserCog, Check, X, LogOut, Image as ImageIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
 import { doc } from "firebase/firestore";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface EmployeeViewProps {
   user: User;
@@ -45,7 +52,6 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
     priority: 'medium' as any
   });
 
-  // Sync form with user prop when not editing
   useEffect(() => {
     if (!isEditingProfile) {
       setProfileForm({
@@ -122,14 +128,13 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
         teamId: profileForm.team,
         employeeNumber: profileForm.employeeNumber,
         dateOfJoining: profileForm.dateOfJoining,
-        leaveBalance: approvedLeavesCount // Sync count if needed, or keep separate
+        leaveBalance: approvedLeavesCount
       })
     };
 
     setDocumentNonBlocking(profileRef, updatedData, { merge: true });
-    
     setIsEditingProfile(false);
-    toast({ title: "Profile Updated", description: "The professional profile has been synchronized with the executive database." });
+    toast({ title: "Profile Updated", description: "The professional portfolio has been synchronized." });
   };
 
   return (
@@ -280,16 +285,32 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-muted rounded-lg text-primary"><Calendar className="h-4 w-4" /></div>
+                <div className="p-2 bg-muted rounded-lg text-primary"><CalendarIcon className="h-4 w-4" /></div>
                 <div>
                   <p className="text-xs text-muted-foreground">Joined Date</p>
                   {isEditingProfile ? (
-                    <Input 
-                      type="date"
-                      value={profileForm.dateOfJoining} 
-                      onChange={e => setProfileForm({...profileForm, dateOfJoining: e.target.value})}
-                      className="h-8 text-xs max-w-[150px] bg-white/50 mt-1"
-                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "h-8 w-full justify-start text-left font-normal text-xs bg-white/50 mt-1",
+                            !profileForm.dateOfJoining && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-3 w-3" />
+                          {profileForm.dateOfJoining ? format(new Date(profileForm.dateOfJoining), "PPP") : <span>Pick a date</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 luxury-shadow border-primary/10" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={profileForm.dateOfJoining ? new Date(profileForm.dateOfJoining) : undefined}
+                          onSelect={(date) => setProfileForm({ ...profileForm, dateOfJoining: date ? date.toISOString().split('T')[0] : '' })}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                   ) : (
                     <p className="font-medium">{user.dateOfJoining || 'Jan 2023'}</p>
                   )}
@@ -385,7 +406,7 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
-                      <Calendar className="h-4 w-4" />
+                      <CalendarIcon className="h-4 w-4" />
                       <span>Due: {task.dueDate}</span>
                     </div>
                   </CardContent>
@@ -407,21 +428,53 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="startDate">Start Date</Label>
-                      <Input 
-                        id="startDate" 
-                        type="date" 
-                        value={leaveForm.startDate} 
-                        onChange={e => setLeaveForm({...leaveForm, startDate: e.target.value})} 
-                      />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !leaveForm.startDate && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {leaveForm.startDate ? format(new Date(leaveForm.startDate), "PPP") : <span>Pick a date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 luxury-shadow border-primary/10" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={leaveForm.startDate ? new Date(leaveForm.startDate) : undefined}
+                            onSelect={(date) => setLeaveForm({ ...leaveForm, startDate: date ? date.toISOString().split('T')[0] : '' })}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="endDate">End Date</Label>
-                      <Input 
-                        id="endDate" 
-                        type="date" 
-                        value={leaveForm.endDate} 
-                        onChange={e => setLeaveForm({...leaveForm, endDate: e.target.value})} 
-                      />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !leaveForm.endDate && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {leaveForm.endDate ? format(new Date(leaveForm.endDate), "PPP") : <span>Pick a date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 luxury-shadow border-primary/10" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={leaveForm.endDate ? new Date(leaveForm.endDate) : undefined}
+                            onSelect={(date) => setLeaveForm({ ...leaveForm, endDate: date ? date.toISOString().split('T')[0] : '' })}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </div>
                   <div className="space-y-2">

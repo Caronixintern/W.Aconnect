@@ -12,13 +12,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Users, CalendarCheck, Clock, ClipboardList, TrendingUp, CheckCircle2, XCircle, Sparkles, Search, ArrowLeft, LayoutDashboard, UserCog, Mail, Phone, Image as ImageIcon, Shield, Activity } from "lucide-react";
+import { Users, CalendarCheck, Clock, ClipboardList, TrendingUp, CheckCircle2, XCircle, Sparkles, Search, ArrowLeft, LayoutDashboard, UserCog, Mail, Phone, Image as ImageIcon, Shield, Activity, Calendar as CalendarIcon } from "lucide-react";
 import { adminDailyBriefing, AdminDailyBriefingOutput } from "@/ai/flows/admin-daily-briefing-flow";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { EmployeeView } from "./EmployeeView";
 import { useFirestore, setDocumentNonBlocking } from "@/firebase";
 import { doc } from "firebase/firestore";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface AdminViewProps {
   currentUser: User;
@@ -43,7 +50,6 @@ export function AdminView({ currentUser, users, leaveRequests, tasks, attendance
     priority: 'medium' as any
   });
 
-  // Profile management state
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({
     name: currentUser.name,
@@ -527,11 +533,28 @@ export function AdminView({ currentUser, users, leaveRequests, tasks, attendance
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Deadline</Label>
-                    <Input 
-                      type="date" 
-                      value={taskForm.dueDate}
-                      onChange={e => setTaskForm({...taskForm, dueDate: e.target.value})}
-                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !taskForm.dueDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {taskForm.dueDate ? format(new Date(taskForm.dueDate), "PPP") : <span>Pick a date</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 luxury-shadow border-primary/10" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={taskForm.dueDate ? new Date(taskForm.dueDate) : undefined}
+                          onSelect={(date) => setTaskForm({ ...taskForm, dueDate: date ? date.toISOString().split('T')[0] : '' })}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="space-y-2">
                     <Label>Priority</Label>
