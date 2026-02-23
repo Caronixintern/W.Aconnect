@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { AppNavbar } from "@/components/layout/AppNavbar";
 import { EmployeeView } from "@/components/dashboard/EmployeeView";
 import { AdminView } from "@/components/dashboard/AdminView";
@@ -47,19 +47,47 @@ export default function Home() {
       toast({ title: "Error", description: "Please enter email and password.", variant: "destructive" });
       return;
     }
+    if (mode === 'signup' && !name) {
+      toast({ title: "Error", description: "Please enter your full name.", variant: "destructive" });
+      return;
+    }
 
     setIsProcessing(true);
-    try {
-      if (mode === 'signup') {
-        initiateEmailSignUp(auth, email, password);
-      } else {
-        initiateEmailSignIn(auth, email, password);
-      }
-    } catch (error: any) {
-      toast({ title: "Auth Error", description: error.message, variant: "destructive" });
-    } finally {
-      setIsProcessing(false);
-    }
+    const authPromise = mode === 'signup' 
+      ? initiateEmailSignUp(auth, email, password) 
+      : initiateEmailSignIn(auth, email, password);
+
+    authPromise
+      .then((userCredential) => {
+        if (mode === 'signup') {
+          const profileData = role === 'employee' ? {
+            id: userCredential.user.uid,
+            firstName: name.split(' ')[0] || 'Employee',
+            lastName: name.split(' ').slice(1).join(' ') || 'User',
+            employeeNumber: `EMP-${Math.floor(Math.random() * 10000)}`,
+            email: email,
+            dateOfJoining: new Date().toISOString().split('T')[0],
+            leaveBalance: 15,
+            teamId: 'General'
+          } : {
+            id: userCredential.user.uid,
+            firstName: name.split(' ')[0] || 'Admin',
+            lastName: name.split(' ').slice(1).join(' ') || 'User',
+            email: email
+          };
+
+          const collectionName = role === 'employee' ? 'employees' : 'admins';
+          setDoc(doc(db, collectionName, userCredential.user.uid), profileData);
+        }
+      })
+      .catch((error: any) => {
+        toast({ title: "Auth Error", description: error.message, variant: "destructive" });
+        setIsProcessing(false);
+      })
+      .finally(() => {
+        // Only stop processing if there wasn't an immediate error caught above
+        // or let the auth state listener handle the redirection
+      });
   };
 
   const handleSignOut = () => {
@@ -79,7 +107,6 @@ export default function Home() {
   }
 
   if (user) {
-    // Bridge real user to AppUser type for components
     const currentUser: AppUser = {
       id: user.uid,
       name: adminProfile?.firstName ? `${adminProfile.firstName} ${adminProfile.lastName}` : (employeeProfile?.firstName ? `${employeeProfile.firstName} ${employeeProfile.lastName}` : user.email?.split('@')[0] || 'User'),
@@ -97,7 +124,7 @@ export default function Home() {
         <main className="container mx-auto px-4 pt-24 pb-12 max-w-7xl">
           {currentUser.role === 'admin' ? (
             <AdminView 
-              users={[]} // Real app would fetch this via useCollection
+              users={[]} 
               leaveRequests={leaveRequests} 
               tasks={tasks} 
               attendance={attendance}
@@ -130,7 +157,6 @@ export default function Home() {
         </div>
 
         <div className="space-y-6">
-          {/* Admin Portal */}
           {authMode === 'admin-login' ? (
             <Card className="border-none luxury-shadow backdrop-blur-2xl bg-white/90 animate-in fade-in slide-in-from-bottom-2">
               <CardHeader>
@@ -154,9 +180,8 @@ export default function Home() {
                 </div>
               </CardContent>
             </Card>
-          ) : authMode === 'initial' || authMode === 'employee-options' || authMode === 'employee-login' || authMode === 'employee-signup' ? (
+          ) : (
             <>
-              {/* Admin Portal Button */}
               {authMode === 'initial' && (
                 <Card className="border-none luxury-shadow backdrop-blur-2xl bg-white/90 transform hover:-translate-y-1 transition-transform duration-300">
                   <CardHeader className="pb-4">
@@ -177,7 +202,6 @@ export default function Home() {
                 </Card>
               )}
 
-              {/* Employee Lounge */}
               <Card className="border-none luxury-shadow backdrop-blur-2xl bg-white/90 transform hover:-translate-y-1 transition-transform duration-300">
                 <CardHeader className="pb-4">
                   <div className="flex items-center gap-3">
@@ -218,6 +242,12 @@ export default function Home() {
                     </div>
                   ) : (
                     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
+                      {authMode === 'employee-signup' && (
+                        <div className="space-y-2">
+                          <Label>Full Name</Label>
+                          <Input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Julian Sterling" />
+                        </div>
+                      )}
                       <div className="space-y-2">
                         <Label>Email</Label>
                         <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="employee@officezenith.com" />
@@ -237,7 +267,7 @@ export default function Home() {
                 </CardContent>
               </Card>
             </>
-          ) : null}
+          )}
         </div>
       </div>
       
