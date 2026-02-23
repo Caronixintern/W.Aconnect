@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react";
@@ -117,7 +118,6 @@ export function AdminView({ users, leaveRequests, tasks, attendance, onUpdateLea
           tasks={tasks.filter(t => t.assignedToEmployeeId === selectedEmployee.id)} 
           leaveRequests={leaveRequests.filter(l => l.employeeId === selectedEmployee.id)}
           onRequestLeave={(req) => {
-            // Admin requesting leave on behalf of employee logic could go here
             toast({ title: "Admin Action", description: "Processing leave request as administrator." });
           }}
         />
@@ -177,7 +177,7 @@ export function AdminView({ users, leaveRequests, tasks, attendance, onUpdateLea
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Efficiency Index</p>
-                <h3 className="text-3xl font-bold">98%</h3>
+                <h3 className="text-3xl font-bold">0%</h3>
               </div>
               <div className="p-3 bg-orange-50 rounded-xl text-orange-600"><TrendingUp className="h-6 w-6" /></div>
             </div>
