@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Users, CalendarCheck, Clock, ClipboardList, TrendingUp, CheckCircle2, XCircle, Sparkles, Plus, Search } from "lucide-react";
 import { adminDailyBriefing, AdminDailyBriefingOutput } from "@/ai/flows/admin-daily-briefing-flow";
 import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface AdminViewProps {
   users: User[];
