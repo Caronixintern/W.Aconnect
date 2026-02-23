@@ -140,14 +140,20 @@ const adminDailyBriefingFlow = ai.defineFlow(
         return output;
       } catch (error: any) {
         attempts++;
-        const isTransient = error.message?.includes('503') || error.message?.includes('high demand');
+        const errorMessage = error.message?.toLowerCase() || '';
+        const isTransient = 
+          errorMessage.includes('503') || 
+          errorMessage.includes('429') || 
+          errorMessage.includes('high demand') || 
+          errorMessage.includes('quota exceeded') ||
+          errorMessage.includes('resource_exhausted');
         
         if (attempts >= maxAttempts || !isTransient) {
           throw error;
         }
         
-        // Wait with exponential backoff (1s, 2s)
-        await new Promise(resolve => setTimeout(resolve, attempts * 1000));
+        // Wait with exponential backoff (2s, 4s)
+        await new Promise(resolve => setTimeout(resolve, attempts * 2000));
       }
     }
     throw new Error('AI service is currently unavailable. Please try again in a moment.');
