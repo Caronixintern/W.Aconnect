@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react";
@@ -80,7 +81,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <Button onClick={() => handleLogin('employee')} variant="secondary" className="w-full h-12 rounded-xl text-lg group">
-                  Login as Employee
+                  Employee Login
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </CardContent>
