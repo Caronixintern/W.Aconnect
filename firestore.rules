@@ -110,7 +110,9 @@ service cloud.firestore {
 
     match /leaveRequests/{leaveRequestId} {
       allow get, list: if isAdmin();
-      allow create, update, delete: if isAdmin();
+      // Allow creation if the user is an admin OR if the authenticated user is the employee requester.
+      allow create: if isAdmin() || (isSignedIn() && request.resource.data.employeeId == request.auth.uid);
+      allow update, delete: if isAdmin();
     }
 
     match /tasks/{taskId} {
