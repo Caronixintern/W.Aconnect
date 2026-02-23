@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react";
@@ -79,8 +78,13 @@ export function AdminView({ users, leaveRequests, tasks, attendance, onUpdateLea
           }))
       });
       setBriefing(result);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Briefing failed", error);
+      toast({
+        variant: "destructive",
+        title: "AI Briefing Unavailable",
+        description: error.message || "The AI service is experiencing high demand. Please try again in a few moments.",
+      });
     } finally {
       setIsGeneratingBriefing(false);
     }

@@ -130,7 +130,26 @@ const adminDailyBriefingFlow = ai.defineFlow(
     outputSchema: AdminDailyBriefingOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while (attempts < maxAttempts) {
+      try {
+        const {output} = await prompt(input);
+        if (!output) throw new Error('Prompt returned no output');
+        return output;
+      } catch (error: any) {
+        attempts++;
+        const isTransient = error.message?.includes('503') || error.message?.includes('high demand');
+        
+        if (attempts >= maxAttempts || !isTransient) {
+          throw error;
+        }
+        
+        // Wait with exponential backoff (1s, 2s)
+        await new Promise(resolve => setTimeout(resolve, attempts * 1000));
+      }
+    }
+    throw new Error('AI service is currently unavailable. Please try again in a moment.');
   }
 );
