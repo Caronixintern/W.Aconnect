@@ -213,7 +213,7 @@ export default function Home() {
                       <CardDescription>Personal dashboard and team sync</CardDescription>
                     </div>
                   </div>
-                </Header>
+                </CardHeader>
                 <CardContent>
                   {authMode === 'initial' ? (
                     <Button 
