@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, use } from "react";
@@ -41,7 +40,6 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
   const [name, setName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Pre-fill admin credentials when in admin login mode
   useEffect(() => {
     if (authMode === 'admin-login') {
       setEmail('qwer@gmail.com');
@@ -49,7 +47,6 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
     }
   }, [authMode]);
 
-  // Robust Admin identification
   const isAdminEmail = (emailStr?: string | null) => {
     if (!emailStr) return false;
     const lowerEmail = emailStr.toLowerCase();
@@ -58,14 +55,12 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
 
   const isAdminAccount = isAdminEmail(user?.email);
 
-  // Profile references
   const adminProfileRef = useMemoFirebase(() => user ? doc(db, 'admins', user.uid) : null, [db, user]);
   const employeeProfileRef = useMemoFirebase(() => user ? doc(db, 'employees', user.uid) : null, [db, user]);
   
   const { data: adminProfile, isLoading: isAdminLoading } = useDoc(adminProfileRef);
   const { data: employeeProfile, isLoading: isEmployeeLoading } = useDoc(employeeProfileRef);
 
-  // Global data queries for Admin
   const employeesQuery = useMemoFirebase(() => user ? query(collection(db, 'employees')) : null, [db, user]);
   const adminsQuery = useMemoFirebase(() => user ? query(collection(db, 'admins')) : null, [db, user]);
   const allLeavesQuery = useMemoFirebase(() => user ? query(collection(db, 'leaveRequests')) : null, [db, user]);
@@ -99,7 +94,6 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
       .then((userCredential) => {
         const isTargetAdmin = isAdminEmail(targetEmail);
         
-        // Sync profile to Firestore if new or explicitly requested
         const names = name.split(' ');
         const profileData = {
           id: userCredential.user.uid,
@@ -195,12 +189,23 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
       phone: adminProfile?.phoneNumber || employeeProfile?.phoneNumber || '',
       role: isActuallyAdmin ? 'admin' : 'employee',
       team: employeeProfile?.teamId || (isActuallyAdmin ? 'Executive' : 'General'),
-      avatarUrl: `https://picsum.photos/seed/${user.uid}/200/200`
+      avatarUrl: `https://picsum.photos/seed/${user.uid}/200/200`,
+      employeeNumber: employeeProfile?.employeeNumber || '',
+      dateOfJoining: employeeProfile?.dateOfJoining || ''
     };
 
     const allUsers: AppUser[] = [
       ...(adminsData || []).map(a => ({ id: a.id, name: `${a.firstName} ${a.lastName}`, email: a.email, role: 'admin' as const, team: 'Executive', phone: a.phoneNumber || '' })),
-      ...(employeesData || []).map(e => ({ id: e.id, name: `${e.firstName} ${e.lastName}`, email: e.email, role: 'employee' as const, team: e.teamId || 'General', phone: e.phoneNumber || '' }))
+      ...(employeesData || []).map(e => ({ 
+        id: e.id, 
+        name: `${e.firstName} ${e.lastName}`, 
+        email: e.email, 
+        role: 'employee' as const, 
+        team: e.teamId || 'General', 
+        phone: e.phoneNumber || '',
+        employeeNumber: e.employeeNumber,
+        dateOfJoining: e.dateOfJoining
+      }))
     ];
 
     return (

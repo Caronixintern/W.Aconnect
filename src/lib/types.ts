@@ -8,6 +8,8 @@ export interface User {
   role: Role;
   team: string;
   avatarUrl?: string;
+  employeeNumber?: string;
+  dateOfJoining?: string;
 }
 
 export interface LeaveRequest {

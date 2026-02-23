@@ -30,7 +30,9 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
   const [profileForm, setProfileForm] = useState({
     name: user.name,
     phone: user.phone,
-    team: user.team
+    team: user.team,
+    employeeNumber: user.employeeNumber || '',
+    dateOfJoining: user.dateOfJoining || ''
   });
 
   const [leaveForm, setLeaveForm] = useState({
@@ -69,11 +71,13 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
       firstName,
       lastName,
       phoneNumber: profileForm.phone,
-      teamId: profileForm.team
+      teamId: profileForm.team,
+      employeeNumber: profileForm.employeeNumber,
+      dateOfJoining: profileForm.dateOfJoining
     }, { merge: true });
     
     setIsEditingProfile(false);
-    toast({ title: "Profile Updated", description: "Your professional profile has been synchronized." });
+    toast({ title: "Profile Updated", description: "The professional profile has been synchronized." });
   };
 
   return (
@@ -116,7 +120,13 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
                     className="rounded-full bg-red-500/80 backdrop-blur-md border-white/30 text-white hover:bg-red-600"
                     onClick={() => {
                       setIsEditingProfile(false);
-                      setProfileForm({ name: user.name, phone: user.phone, team: user.team });
+                      setProfileForm({ 
+                        name: user.name, 
+                        phone: user.phone, 
+                        team: user.team, 
+                        employeeNumber: user.employeeNumber || '', 
+                        dateOfJoining: user.dateOfJoining || '' 
+                      });
                     }}
                   >
                     <X className="h-4 w-4" />
@@ -147,7 +157,7 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
                       value={profileForm.team} 
                       onChange={e => setProfileForm({...profileForm, team: e.target.value})}
                       className="h-8 text-sm max-w-[200px]"
-                      placeholder="Team Name"
+                      placeholder="Division"
                     />
                   ) : (
                     <span>{user.team}</span>
@@ -175,7 +185,18 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-muted rounded-lg text-primary"><Hash className="h-4 w-4" /></div>
-                <div><p className="text-xs text-muted-foreground">Employee ID</p><p className="font-medium truncate max-w-[120px]">{user.id}</p></div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Employee ID</p>
+                  {isEditingProfile ? (
+                    <Input 
+                      value={profileForm.employeeNumber} 
+                      onChange={e => setProfileForm({...profileForm, employeeNumber: e.target.value})}
+                      className="h-8 text-xs max-w-[120px]"
+                    />
+                  ) : (
+                    <p className="font-medium truncate max-w-[120px]">{user.employeeNumber || 'Not assigned'}</p>
+                  )}
+                </div>
               </div>
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-muted rounded-lg text-primary"><Mail className="h-4 w-4" /></div>
@@ -198,7 +219,19 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
               </div>
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-muted rounded-lg text-primary"><Calendar className="h-4 w-4" /></div>
-                <div><p className="text-xs text-muted-foreground">Joined Date</p><p className="font-medium">Jan 2023</p></div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Joined Date</p>
+                  {isEditingProfile ? (
+                    <Input 
+                      type="date"
+                      value={profileForm.dateOfJoining} 
+                      onChange={e => setProfileForm({...profileForm, dateOfJoining: e.target.value})}
+                      className="h-8 text-xs max-w-[150px]"
+                    />
+                  ) : (
+                    <p className="font-medium">{user.dateOfJoining || 'Jan 2023'}</p>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -228,7 +261,7 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
                   <span className="font-medium">09:30 AM</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Design Sync</span>
+                  <span className="text-muted-foreground">Executive Sync</span>
                   <span className="font-medium">02:00 PM</span>
                 </div>
               </div>
