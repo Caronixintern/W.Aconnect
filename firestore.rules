@@ -10,21 +10,6 @@ service cloud.firestore {
      * is determined by their existence in either the 'admins' or 'employees' collection. 
      * It prioritizes path-based ownership and denormalized identity fields for high-performance 
      * authorization without the need for expensive cross-document lookups.
-     *
-     * DATA STRUCTURE:
-     * - /employees/{uid}: Employee profile, root of employee-specific data.
-     * - /admins/{uid}: Admin profile, existence grants system-wide administrative privileges.
-     * - /employees/{uid}/...: Private, user-scoped subcollections for attendance, tasks, and requests.
-     * - /leaveRequests, /tasks: Global master collections for administrative oversight.
-     *
-     * KEY SECURITY DECISIONS:
-     * - Path-Based Ownership: User data is nested under their UID to simplify list operation security.
-     * - DBAC (Database Access Control): Admin rights are verified by checking for an existing 
-     *   document in the /admins/ collection using the user's Auth UID.
-     * - Relational Integrity: On document creation, rules enforce that internal identity fields 
-     *   (like 'id' or 'employeeId') match the authenticated user's ID or the path parameters.
-     * - Prototyping Flexibility: Rules focus on "Who" can access data rather than "What" 
-     *   the data looks like, allowing for rapid schema iteration.
      */
 
     // --- Helper Functions ---
@@ -56,17 +41,14 @@ service cloud.firestore {
 
     /** Enforces immutability for critical fields during updates. */
     function isUnchanged(field) {
-      return request.resource.data[field] == resource.data[field];
+      // Use diff to check if the specific field was modified
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny([field]);
     }
 
     // --- Collection Rules ---
 
     /**
      * @description Rules for Employee profiles. Users can manage their own profile.
-     * @path /employees/{employeeId}
-     * @allow Authenticated user (create) where employeeId == auth.uid.
-     * @deny Any user (update) attempting to change a profile that isn't theirs.
-     * @principle Self-creation and ownership.
      */
     match /employees/{employeeId} {
       allow get: if isSignedIn();
@@ -75,13 +57,6 @@ service cloud.firestore {
       allow update: if isExistingOwner(employeeId) && isUnchanged('id');
       allow delete: if isAdmin();
 
-      /**
-       * @description Attendance records for a specific employee.
-       * @path /employees/{employeeId}/attendance/{attendanceId}
-       * @allow Employee (list) their own attendance.
-       * @deny User (get) attendance record for a different employee.
-       * @principle Path-based ownership.
-       */
       match /attendance/{attendanceId} {
         allow get, list: if isOwner(employeeId) || isAdmin();
         allow create: if isOwner(employeeId) && isLinkedTo('employeeId', employeeId);
@@ -89,13 +64,6 @@ service cloud.firestore {
         allow delete: if isAdmin();
       }
 
-      /**
-       * @description Leave requests scoped to an employee.
-       * @path /employees/{employeeId}/leaveRequests/{leaveRequestId}
-       * @allow Employee (create) a leave request for themselves.
-       * @deny Employee (update) the 'status' of their own request (Admin only).
-       * @principle Responsibility separation (Creator vs Processor).
-       */
       match /leaveRequests/{leaveRequestId} {
         allow get, list: if isOwner(employeeId) || isAdmin();
         allow create: if isOwner(employeeId) && isLinkedTo('employeeId', employeeId);
@@ -103,13 +71,6 @@ service cloud.firestore {
         allow delete: if isAdmin();
       }
 
-      /**
-       * @description Tasks assigned to a specific employee.
-       * @path /employees/{employeeId}/tasks/{taskId}
-       * @allow Employee (list) tasks assigned to them.
-       * @deny Employee (create) a task for themselves (Admin only).
-       * @principle Controlled assignment.
-       */
       match /tasks/{taskId} {
         allow get, list: if isOwner(employeeId) || isAdmin();
         allow create: if isAdmin();
@@ -117,13 +78,6 @@ service cloud.firestore {
         allow delete: if isAdmin();
       }
 
-      /**
-       * @description Private notifications for an employee.
-       * @path /employees/{employeeId}/notifications/{notificationId}
-       * @allow Employee (get) their own notifications.
-       * @deny Public (list) of an employee's notifications.
-       * @principle Private messaging.
-       */
       match /notifications/{notificationId} {
         allow get, list: if isOwner(employeeId);
         allow create: if isAdmin();
@@ -133,11 +87,7 @@ service cloud.firestore {
     }
 
     /**
-     * @description Administrator profile rules. Profiles define administrative power.
-     * @path /admins/{adminId}
-     * @allow Admin (get) any admin profile; Any user (create) if auth matches path.
-     * @deny User (delete) another user's admin profile.
-     * @principle Identity-based authorization.
+     * @description Administrator profile rules.
      */
     match /admins/{adminId} {
       allow get: if isSignedIn();
@@ -146,48 +96,22 @@ service cloud.firestore {
       allow update: if isExistingOwner(adminId) && isUnchanged('id');
       allow delete: if isAdmin();
 
-      /**
-       * @description Notifications specific to an administrator.
-       * @path /admins/{adminId}/notifications/{notificationId}
-       * @allow Admin (list) their own notifications.
-       * @principle Admin isolation.
-       */
       match /notifications/{notificationId} {
         allow get, list: if isOwner(adminId);
         allow create, update, delete: if isAdmin();
       }
     }
 
-    /**
-     * @description Global teams collection. Read access for all employees.
-     * @path /teams/{teamId}
-     * @allow Signed-in user (list) all teams.
-     * @deny Signed-in user (create) a new team (Admin only).
-     * @principle Public read, admin write.
-     */
     match /teams/{teamId} {
       allow get, list: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }
 
-    /**
-     * @description Master collection for Leave Requests (Admin View).
-     * @path /leaveRequests/{leaveRequestId}
-     * @allow Admin (list) all system leave requests.
-     * @deny Regular employee (list) global leave requests.
-     * @principle Administrative oversight.
-     */
     match /leaveRequests/{leaveRequestId} {
       allow get, list: if isAdmin();
       allow create, update, delete: if isAdmin();
     }
 
-    /**
-     * @description Master collection for Tasks (Admin View).
-     * @path /tasks/{taskId}
-     * @allow Admin (list) all tasks in the system.
-     * @principle Centralized task management.
-     */
     match /tasks/{taskId} {
       allow get, list: if isAdmin();
       allow create, update, delete: if isAdmin();

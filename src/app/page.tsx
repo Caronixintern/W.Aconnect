@@ -11,8 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ShieldCheck, UserCircle2, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
-import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase, initiateEmailSignUp, initiateEmailSignIn } from "@/firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase, initiateEmailSignUp, initiateEmailSignIn, setDocumentNonBlocking } from "@/firebase";
+import { doc } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 
 export default function Home() {
@@ -77,16 +77,13 @@ export default function Home() {
           };
 
           const collectionName = role === 'employee' ? 'employees' : 'admins';
-          setDoc(doc(db, collectionName, userCredential.user.uid), profileData);
+          // Use non-blocking merged set for profile creation
+          setDocumentNonBlocking(doc(db, collectionName, userCredential.user.uid), profileData, { merge: true });
         }
       })
       .catch((error: any) => {
         toast({ title: "Auth Error", description: error.message, variant: "destructive" });
         setIsProcessing(false);
-      })
-      .finally(() => {
-        // Only stop processing if there wasn't an immediate error caught above
-        // or let the auth state listener handle the redirection
       });
   };
 

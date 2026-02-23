@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from "react";
@@ -14,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Calendar, Clock, ClipboardList, Send, Briefcase, Mail, Phone, Hash, UserCog, Check, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { useFirestore, updateDocumentNonBlocking } from "@/firebase";
+import { useFirestore, setDocumentNonBlocking } from "@/firebase";
 import { doc } from "firebase/firestore";
 
 interface EmployeeViewProps {
@@ -65,12 +64,15 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
     const lastName = names.slice(1).join(' ') || '';
 
     const employeeRef = doc(db, 'employees', user.id);
-    updateDocumentNonBlocking(employeeRef, {
+    // Use setDocumentNonBlocking with merge to handle both update and creation
+    // Including 'id' is critical to satisfy security rules
+    setDocumentNonBlocking(employeeRef, {
+      id: user.id,
       firstName,
       lastName,
       phoneNumber: profileForm.phone,
       teamId: profileForm.team
-    });
+    }, { merge: true });
     
     setIsEditingProfile(false);
     toast({ title: "Profile Updated", description: "Your professional profile has been synchronized." });
