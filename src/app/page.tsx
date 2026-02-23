@@ -47,6 +47,7 @@ export default function Home() {
   const { data: employeeProfile, isLoading: isEmployeeLoading } = useDoc(employeeRef);
 
   const { 
+    users,
     leaveRequests, 
     tasks, 
     attendance, 
@@ -72,7 +73,7 @@ export default function Home() {
 
     authPromise
       .then((userCredential) => {
-        // For the specific admin email, ensure the record exists even on first sign in
+        // For the specific admin email or any signup, ensure the record exists in the database
         if (mode === 'signup' || (mode === 'signin' && role === 'admin' && email === 'qwer@gmail.com')) {
           const profileData = role === 'employee' ? {
             id: userCredential.user.uid,
@@ -94,6 +95,7 @@ export default function Home() {
           const collectionName = role === 'employee' ? 'employees' : 'admins';
           setDocumentNonBlocking(doc(db, collectionName, userCredential.user.uid), profileData, { merge: true });
         }
+        setIsProcessing(false);
       })
       .catch((error: any) => {
         toast({ title: "Auth Error", description: error.message, variant: "destructive" });
@@ -118,7 +120,7 @@ export default function Home() {
   }
 
   if (user) {
-    // If the user is the designated admin, they are an admin even if the profile is still loading/missing
+    // If the user is the designated admin email, they are an admin even if the profile is still loading/missing
     const isActuallyAdmin = !!adminProfile || user.email === 'qwer@gmail.com';
     
     const currentUser: AppUser = {
@@ -138,7 +140,7 @@ export default function Home() {
         <main className="container mx-auto px-4 pt-24 pb-12 max-w-7xl">
           {currentUser.role === 'admin' ? (
             <AdminView 
-              users={[]} 
+              users={users} 
               leaveRequests={leaveRequests} 
               tasks={tasks} 
               attendance={attendance}
