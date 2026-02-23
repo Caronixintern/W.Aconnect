@@ -105,26 +105,28 @@ export default function Home(props: { params: Promise<any>; searchParams: Promis
 
     authPromise
       .then((userCredential) => {
-        const isTargetAdmin = isAdminEmail(targetEmail);
-        
-        const names = name.split(' ');
-        const profileData = {
-          id: userCredential.user.uid,
-          firstName: names[0] || (isTargetAdmin ? 'Executive' : 'Employee'),
-          lastName: names.slice(1).join(' ') || (isTargetAdmin ? 'Admin' : 'User'),
-          email: targetEmail,
-          phoneNumber: '',
-          avatarUrl: `https://picsum.photos/seed/${userCredential.user.uid}/200/200`,
-          ...(isTargetAdmin ? {} : {
-            employeeNumber: `EMP-${Math.floor(Math.random() * 10000)}`,
-            dateOfJoining: new Date().toISOString().split('T')[0],
-            leaveBalance: 0,
-            teamId: 'General'
-          })
-        };
+        // Only initialize profile on Sign Up. Sign In should just restore existing data.
+        if (mode === 'signup') {
+          const isTargetAdmin = isAdminEmail(targetEmail);
+          const names = name.split(' ');
+          const profileData = {
+            id: userCredential.user.uid,
+            firstName: names[0] || (isTargetAdmin ? 'Executive' : 'Employee'),
+            lastName: names.slice(1).join(' ') || (isTargetAdmin ? 'Admin' : 'User'),
+            email: targetEmail,
+            phoneNumber: '',
+            avatarUrl: `https://picsum.photos/seed/${userCredential.user.uid}/200/200`,
+            ...(isTargetAdmin ? {} : {
+              employeeNumber: `EMP-${Math.floor(Math.random() * 10000)}`,
+              dateOfJoining: new Date().toISOString().split('T')[0],
+              leaveBalance: 0,
+              teamId: 'General'
+            })
+          };
 
-        const collectionName = isTargetAdmin ? 'admins' : 'employees';
-        setDocumentNonBlocking(doc(db, collectionName, userCredential.user.uid), profileData, { merge: true });
+          const collectionName = isTargetAdmin ? 'admins' : 'employees';
+          setDocumentNonBlocking(doc(db, collectionName, userCredential.user.uid), profileData, { merge: true });
+        }
         
         setIsProcessing(false);
       })
