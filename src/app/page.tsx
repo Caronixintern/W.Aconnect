@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react";
@@ -28,11 +29,11 @@ import { doc, collection, query } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 import Image from "next/image";
 
-export default function Home(props: { params: Promise<any>; searchParams: Promise<any> }) {
-  // Unwrap params and searchParams for Next.js 15 compatibility
-  const params = React.use(props.params);
-  const searchParams = React.use(props.searchParams);
-
+/**
+ * WonderlightAdventure Root Application
+ * Managed with Next.js 15 asynchronous APIs.
+ */
+export default function Home() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const db = useFirestore();

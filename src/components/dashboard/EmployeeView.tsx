@@ -11,6 +11,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Calendar as CalendarIcon, Clock, ClipboardList, Send, Briefcase, Mail, Phone, Hash, UserCog, Check, X, LogOut, Image as ImageIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -28,6 +35,7 @@ interface EmployeeViewProps {
 export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequestLeave }: EmployeeViewProps) {
   const db = useFirestore();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [viewingTask, setViewingTask] = useState<Task | null>(null);
   
   const [profileForm, setProfileForm] = useState({
     name: user.name,
@@ -369,7 +377,11 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
               </Card>
             ) : (
               myTasks.map(task => (
-                <Card key={task.id} className="border-none luxury-shadow overflow-hidden group hover:scale-[1.02] transition-transform">
+                <Card 
+                  key={task.id} 
+                  className="border-none luxury-shadow overflow-hidden group hover:scale-[1.02] transition-transform cursor-pointer"
+                  onClick={() => setViewingTask(task)}
+                >
                   <div className={cn("h-1.5 w-full", task.priority === 'high' ? 'bg-destructive' : task.priority === 'medium' ? 'bg-primary' : 'bg-muted')} />
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
@@ -522,6 +534,43 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={!!viewingTask} onOpenChange={() => setViewingTask(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center gap-2 mb-2">
+              <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-widest">{viewingTask?.priority}</Badge>
+              <Badge className={cn(
+                viewingTask?.status === 'completed' ? 'bg-green-500' : 
+                viewingTask?.status === 'in-progress' ? 'bg-primary' : 'bg-muted text-muted-foreground'
+              )}>
+                {viewingTask?.status?.toUpperCase()}
+              </Badge>
+            </div>
+            <DialogTitle className="text-2xl font-bold text-primary">{viewingTask?.title}</DialogTitle>
+            <DialogDescription>
+              Assigned on {viewingTask?.assignmentDate ? new Date(viewingTask.assignmentDate).toLocaleDateString() : 'N/A'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-6 space-y-6">
+            <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap leading-relaxed bg-muted/30 p-4 rounded-xl">
+              {viewingTask?.description}
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 pt-6 border-t">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <CalendarIcon className="h-4 w-4 text-primary" />
+                <span>Deadline: {viewingTask?.dueDate}</span>
+              </div>
+              {viewingTask?.completionDate && (
+                <div className="flex items-center gap-2 text-sm font-semibold text-green-600">
+                  <Check className="h-4 w-4" />
+                  <span>Completed: {new Date(viewingTask.completionDate).toLocaleDateString()}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
