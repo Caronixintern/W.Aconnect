@@ -31,15 +31,14 @@ import {
   Shield, 
   Activity, 
   Trash2, 
-  MoreHorizontal,
-  Video
+  MoreHorizontal
 } from "lucide-react";
 import { adminDailyBriefing, AdminDailyBriefingOutput } from "@/ai/flows/admin-daily-briefing-flow";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { EmployeeView } from "./EmployeeView";
-import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking, useCollection, useMemoFirebase } from "@/firebase";
-import { doc, collection, query, where, orderBy, limit } from "firebase/firestore";
+import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
+import { doc } from "firebase/firestore";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -90,39 +89,6 @@ export function AdminView({
     phone: currentUser.phone,
     avatarUrl: currentUser.avatarUrl || ''
   });
-
-  // Meeting Logic - Guarded with currentUser
-  const activeMeetingQuery = useMemoFirebase(() => {
-    if (!currentUser) return null;
-    return query(
-      collection(db, 'meetings'),
-      where('status', '==', 'active'),
-      orderBy('startTime', 'desc'),
-      limit(1)
-    );
-  }, [db, currentUser]);
-  const { data: activeMeetings } = useCollection(activeMeetingQuery);
-  const activeMeeting = activeMeetings?.[0];
-
-  const handleStartMeeting = () => {
-    const meetingId = `meeting-${Date.now()}`;
-    const meetingData = {
-      id: meetingId,
-      hostAdminId: currentUser.id,
-      startTime: new Date().toISOString(),
-      status: 'active',
-      url: `https://meet.google.com/abc-defg-hij` // Mock meeting URL
-    };
-    setDocumentNonBlocking(doc(db, 'meetings', meetingId), meetingData, { merge: true });
-    toast({ title: "Virtual Sync Started", description: "All employees have been alerted to join the lounge." });
-  };
-
-  const handleEndMeeting = () => {
-    if (activeMeeting) {
-      updateDocumentNonBlocking(doc(db, 'meetings', activeMeeting.id), { status: 'ended' });
-      toast({ title: "Sync Session Ended", description: "The virtual lounge is now closed." });
-    }
-  };
 
   const employees = users.filter(u => u.role === 'employee');
   const pendingLeaves = leaveRequests.filter(l => l.status === 'pending');
@@ -241,17 +207,6 @@ export function AdminView({
           <p className="text-muted-foreground">Comprehensive oversight and strategic resource management.</p>
         </div>
         <div className="flex gap-2">
-          {activeMeeting ? (
-            <Button onClick={handleEndMeeting} variant="destructive" className="rounded-xl luxury-shadow border-none animate-pulse">
-              <Video className="mr-2 h-4 w-4" />
-              End Virtual Sync
-            </Button>
-          ) : (
-            <Button onClick={handleStartMeeting} variant="outline" className="rounded-xl luxury-shadow border-accent/20 hover:bg-accent/5">
-              <Video className="mr-2 h-4 w-4 text-accent" />
-              Host Executive Sync
-            </Button>
-          )}
           <Button onClick={generateBriefing} disabled={isGeneratingBriefing} variant="outline" className="rounded-xl luxury-shadow hover:bg-primary/5">
             <Sparkles className={cn("mr-2 h-4 w-4 text-accent", isGeneratingBriefing && "animate-spin")} />
             Generate AI Intelligence

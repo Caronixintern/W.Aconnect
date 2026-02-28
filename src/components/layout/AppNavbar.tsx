@@ -1,7 +1,7 @@
 
 "use client"
 
-import { Bell, User, LogOut, ArrowLeft, Video } from "lucide-react";
+import { Bell, User, LogOut, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,8 +18,7 @@ import { User as UserType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase";
-import { collection, query, doc, where, orderBy, limit } from "firebase/firestore";
-import { toast } from "@/hooks/use-toast";
+import { collection, query, doc } from "firebase/firestore";
 
 interface AppNavbarProps {
   currentUser: UserType;
@@ -48,28 +47,6 @@ export function AppNavbar({ currentUser, onLogout }: AppNavbarProps) {
     });
   };
 
-  // Meeting Logic - Guarded with currentUser
-  const activeMeetingQuery = useMemoFirebase(() => {
-    if (!currentUser) return null;
-    return query(
-      collection(db, 'meetings'),
-      where('status', '==', 'active'),
-      orderBy('startTime', 'desc'),
-      limit(1)
-    );
-  }, [db, currentUser]);
-  const { data: activeMeetings } = useCollection(activeMeetingQuery);
-  const activeMeeting = activeMeetings?.[0];
-
-  const handleJoinMeeting = () => {
-    if (activeMeeting) {
-      toast({ title: "Connecting...", description: "Joining the virtual executive lounge." });
-      window.open(activeMeeting.url, '_blank');
-    } else {
-      toast({ title: "Virtual Sync", description: "No active meetings currently in session." });
-    }
-  };
-
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 h-16 glass-card px-6 flex items-center justify-between">
       <div className="flex items-center gap-6">
@@ -91,29 +68,15 @@ export function AppNavbar({ currentUser, onLogout }: AppNavbarProps) {
       </div>
 
       <div className="flex items-center gap-4">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className={cn(
-            "transition-all duration-500",
-            activeMeeting 
-              ? "text-accent animate-luxury-pulse scale-110 bg-accent/10 rounded-full" 
-              : "text-muted-foreground hover:text-accent"
-          )}
-          onClick={handleJoinMeeting}
-        >
-          <Video className={cn("h-5 w-5", activeMeeting && "animate-bell")} />
-        </Button>
-
         <DropdownMenu onOpenChange={(open) => open && markAllAsRead()}>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative group">
               <Bell className={cn(
                 "h-5 w-5 transition-colors", 
-                unreadCount > 0 ? "animate-bell text-accent" : "text-muted-foreground group-hover:text-primary"
+                unreadCount > 0 ? "text-accent" : "text-muted-foreground group-hover:text-primary"
               )} />
               {unreadCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 w-4 h-4 p-0 flex items-center justify-center text-[10px] bg-primary badge-pulse">
+                <Badge className="absolute -top-1 -right-1 w-4 h-4 p-0 flex items-center justify-center text-[10px] bg-primary">
                   {unreadCount}
                 </Badge>
               )}
@@ -122,7 +85,7 @@ export function AppNavbar({ currentUser, onLogout }: AppNavbarProps) {
           <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden luxury-shadow border-primary/10">
             <DropdownMenuLabel className="p-4 bg-muted/50 border-b flex items-center justify-between">
               <span>Executive Alerts</span>
-              {unreadCount > 0 && <Badge variant="outline" className="text-[10px] animate-luxury-pulse">{unreadCount} New</Badge>}
+              {unreadCount > 0 && <Badge variant="outline" className="text-[10px]">{unreadCount} New</Badge>}
             </DropdownMenuLabel>
             <ScrollArea className="h-80">
               {!notifications || notifications.length === 0 ? (

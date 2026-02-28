@@ -18,7 +18,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Calendar as CalendarIcon, Clock, ClipboardList, Send, Briefcase, Mail, Phone, Hash, UserCog, Check, X, LogOut, Image as ImageIcon, Video } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, ClipboardList, Send, Briefcase, Mail, Phone, Hash, UserCog, Check, X, LogOut, Image as ImageIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
@@ -337,11 +337,6 @@ export function EmployeeView({ user, attendance, tasks, leaveRequests, onRequest
                 <p className="text-sm text-green-600 mt-1">{todayRecord.checkInTime} - {todayRecord.checkOutTime}</p>
               </div>
             )}
-            
-            <Button className="w-full justify-start h-12 rounded-xl group hover:bg-accent hover:text-accent-foreground transition-all" variant="outline" onClick={() => toast({ title: "Virtual Lounge", description: "Joining your team in the virtual sync room." })}>
-              <Video className="mr-2 h-4 w-4 text-accent" />
-              Join Virtual Lounge
-            </Button>
             
             <Button className="w-full justify-start h-12 rounded-xl" variant="outline" onClick={() => toast({ title: "Daily Report", description: "Executive summary is being prepared." })}>
               <ClipboardList className="mr-2 h-4 w-4 text-primary" />
