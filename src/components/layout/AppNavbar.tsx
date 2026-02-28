@@ -18,7 +18,7 @@ import { User as UserType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase";
-import { collection, query, doc } from "firebase/firestore";
+import { collection, query, doc, where, orderBy, limit } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 
 interface AppNavbarProps {
@@ -28,6 +28,8 @@ interface AppNavbarProps {
 
 export function AppNavbar({ currentUser, onLogout }: AppNavbarProps) {
   const db = useFirestore();
+  
+  // Notification Logic
   const notificationsQuery = useMemoFirebase(() => {
     if (!currentUser) return null;
     const path = currentUser.role === 'admin' ? `admins/${currentUser.id}/notifications` : `employees/${currentUser.id}/notifications`;
@@ -44,6 +46,27 @@ export function AppNavbar({ currentUser, onLogout }: AppNavbarProps) {
         updateDocumentNonBlocking(doc(db, path, notif.id), { isRead: true });
       }
     });
+  };
+
+  // Meeting Logic
+  const activeMeetingQuery = useMemoFirebase(() => {
+    return query(
+      collection(db, 'meetings'),
+      where('status', '==', 'active'),
+      orderBy('startTime', 'desc'),
+      limit(1)
+    );
+  }, [db]);
+  const { data: activeMeetings } = useCollection(activeMeetingQuery);
+  const activeMeeting = activeMeetings?.[0];
+
+  const handleJoinMeeting = () => {
+    if (activeMeeting) {
+      toast({ title: "Connecting...", description: "Joining the virtual executive lounge." });
+      window.open(activeMeeting.url, '_blank');
+    } else {
+      toast({ title: "Virtual Sync", description: "No active meetings currently in session." });
+    }
   };
 
   return (
@@ -70,10 +93,15 @@ export function AppNavbar({ currentUser, onLogout }: AppNavbarProps) {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="text-muted-foreground hover:text-accent transition-colors"
-          onClick={() => toast({ title: "Virtual Sync", description: "Connecting to the global virtual office space..." })}
+          className={cn(
+            "transition-all duration-500",
+            activeMeeting 
+              ? "text-accent animate-luxury-pulse scale-110 bg-accent/10 rounded-full" 
+              : "text-muted-foreground hover:text-accent"
+          )}
+          onClick={handleJoinMeeting}
         >
-          <Video className="h-5 w-5" />
+          <Video className={cn("h-5 w-5", activeMeeting && "animate-bell")} />
         </Button>
 
         <DropdownMenu onOpenChange={(open) => open && markAllAsRead()}>

@@ -100,6 +100,37 @@
         "email"
       ]
     },
+    "Meeting": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Meeting",
+      "type": "object",
+      "description": "Represents an active virtual meeting session started by an administrator.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Meeting session."
+        },
+        "hostAdminId": {
+          "type": "string",
+          "description": "The UID of the administrator who started the meeting."
+        },
+        "startTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the meeting was initiated."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "ended"],
+          "description": "The current status of the meeting."
+        },
+        "url": {
+          "type": "string",
+          "description": "The URL to join the meeting (e.g., Google Meet link)."
+        }
+      },
+      "required": ["id", "hostAdminId", "startTime", "status", "url"]
+    },
     "Team": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Team",
@@ -372,6 +403,22 @@
             {
               "name": "adminId",
               "description": "The unique Firebase Authentication UID of the administrator."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/meetings/{meetingId}",
+        "definition": {
+          "entityName": "Meeting",
+          "schema": {
+            "$ref": "#/backend/entities/Meeting"
+          },
+          "description": "Active meetings started by admins. Anyone authenticated can read, only admins can create/update/delete.",
+          "params": [
+            {
+              "name": "meetingId",
+              "description": "Unique identifier for the meeting session."
             }
           ]
         }
