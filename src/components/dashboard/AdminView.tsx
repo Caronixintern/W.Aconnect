@@ -31,7 +31,8 @@ import {
   Shield, 
   Activity, 
   Trash2, 
-  MoreHorizontal 
+  MoreHorizontal,
+  Video
 } from "lucide-react";
 import { adminDailyBriefing, AdminDailyBriefingOutput } from "@/ai/flows/admin-daily-briefing-flow";
 import { toast } from "@/hooks/use-toast";
@@ -206,10 +207,16 @@ export function AdminView({
           <h1 className="text-3xl font-bold tracking-tight text-primary">Executive Console</h1>
           <p className="text-muted-foreground">Comprehensive oversight and strategic resource management.</p>
         </div>
-        <Button onClick={generateBriefing} disabled={isGeneratingBriefing} variant="outline" className="rounded-xl luxury-shadow hover:bg-primary/5">
-          <Sparkles className={cn("mr-2 h-4 w-4 text-accent", isGeneratingBriefing && "animate-spin")} />
-          Generate AI Intelligence
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => toast({ title: "Meeting Started", description: "Executive Virtual Sync room is live." })} variant="outline" className="rounded-xl luxury-shadow border-accent/20 hover:bg-accent/5">
+            <Video className="mr-2 h-4 w-4 text-accent" />
+            Host Executive Sync
+          </Button>
+          <Button onClick={generateBriefing} disabled={isGeneratingBriefing} variant="outline" className="rounded-xl luxury-shadow hover:bg-primary/5">
+            <Sparkles className={cn("mr-2 h-4 w-4 text-accent", isGeneratingBriefing && "animate-spin")} />
+            Generate AI Intelligence
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

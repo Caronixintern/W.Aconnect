@@ -1,6 +1,7 @@
+
 "use client"
 
-import { Bell, User, LogOut, ArrowLeft } from "lucide-react";
+import { Bell, User, LogOut, ArrowLeft, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,6 +19,7 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase";
 import { collection, query, doc } from "firebase/firestore";
+import { toast } from "@/hooks/use-toast";
 
 interface AppNavbarProps {
   currentUser: UserType;
@@ -65,6 +67,15 @@ export function AppNavbar({ currentUser, onLogout }: AppNavbarProps) {
       </div>
 
       <div className="flex items-center gap-4">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-muted-foreground hover:text-accent transition-colors"
+          onClick={() => toast({ title: "Virtual Sync", description: "Connecting to the global virtual office space..." })}
+        >
+          <Video className="h-5 w-5" />
+        </Button>
+
         <DropdownMenu onOpenChange={(open) => open && markAllAsRead()}>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative group">

@@ -423,16 +423,16 @@ export default function Home() {
                       {authMode === 'employee-signup' && (
                         <div className="space-y-2">
                           <Label>Full Name</Label>
-                          <Input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Julian Sterling" />
+                          <Input type="text" value={name} onChange={setName} placeholder="Julian Sterling" />
                         </div>
                       )}
                       <div className="space-y-2">
                         <Label>Email</Label>
-                        <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="employee@wonderlight.com" />
+                        <Input type="email" value={email} onChange={setEmail} placeholder="employee@wonderlight.com" />
                       </div>
                       <div className="space-y-2">
                         <Label>Password</Label>
-                        <Input type="password" value={password} onChange={e => setPassword(e.target.value)} />
+                        <Input type="password" value={password} onChange={setPassword} />
                       </div>
                       <div className="grid grid-cols-2 gap-3 pt-2">
                         <Button onClick={() => handleAuth(authMode === 'employee-signup' ? 'signup' : 'signin', 'employee')} disabled={isProcessing} className="w-full h-11">
