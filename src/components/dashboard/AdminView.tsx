@@ -11,7 +11,27 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Users, CalendarCheck, Clock, ClipboardList, TrendingUp, CheckCircle2, XCircle, Sparkles, Search, ArrowLeft, LayoutDashboard, UserCog, Mail, Phone, Image as ImageIcon, Shield, Activity, Trash2, MoreHorizontal } from "lucide-react";
+import { 
+  Users, 
+  CalendarCheck, 
+  Clock, 
+  ClipboardList, 
+  TrendingUp, 
+  CheckCircle2, 
+  XCircle, 
+  Sparkles, 
+  Search, 
+  ArrowLeft, 
+  LayoutDashboard, 
+  UserCog, 
+  Mail, 
+  Phone, 
+  Image as ImageIcon, 
+  Shield, 
+  Activity, 
+  Trash2, 
+  MoreHorizontal 
+} from "lucide-react";
 import { adminDailyBriefing, AdminDailyBriefingOutput } from "@/ai/flows/admin-daily-briefing-flow";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";

@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react";
 import { useState, useEffect } from "react";
 import { AppNavbar } from "@/components/layout/AppNavbar";
 import { EmployeeView } from "@/components/dashboard/EmployeeView";
@@ -27,7 +28,11 @@ import { doc, collection, query } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 import Image from "next/image";
 
-export default function Home() {
+export default function Home(props: { params: Promise<any>; searchParams: Promise<any> }) {
+  // Unwrap params and searchParams for Next.js 15 compatibility
+  const params = React.use(props.params);
+  const searchParams = React.use(props.searchParams);
+
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
