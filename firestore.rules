@@ -104,6 +104,10 @@ service cloud.firestore {
       }
     }
 
+    /** 
+     * Virtual Meeting Sync Rules
+     * Allows all signed-in users to list and get active meetings.
+     */
     match /meetings/{meetingId} {
       allow get, list: if isSignedIn();
       allow create, update, delete: if isAdmin();
@@ -116,7 +120,6 @@ service cloud.firestore {
 
     match /leaveRequests/{leaveRequestId} {
       allow get, list: if isAdmin();
-      // Allow creation if the user is an admin OR if the authenticated user is the employee requester.
       allow create: if isAdmin() || (isSignedIn() && request.resource.data.employeeId == request.auth.uid);
       allow update, delete: if isAdmin();
     }

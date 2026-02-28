@@ -91,15 +91,16 @@ export function AdminView({
     avatarUrl: currentUser.avatarUrl || ''
   });
 
-  // Meeting Logic
+  // Meeting Logic - Guarded with currentUser
   const activeMeetingQuery = useMemoFirebase(() => {
+    if (!currentUser) return null;
     return query(
       collection(db, 'meetings'),
       where('status', '==', 'active'),
       orderBy('startTime', 'desc'),
       limit(1)
     );
-  }, [db]);
+  }, [db, currentUser]);
   const { data: activeMeetings } = useCollection(activeMeetingQuery);
   const activeMeeting = activeMeetings?.[0];
 
