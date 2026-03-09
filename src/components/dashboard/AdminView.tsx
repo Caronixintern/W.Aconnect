@@ -32,7 +32,8 @@ import {
   Shield, 
   Activity, 
   Trash2, 
-  MoreHorizontal
+  MoreHorizontal,
+  BellRing
 } from "lucide-react";
 import { adminDailyBriefing, AdminDailyBriefingOutput } from "@/ai/flows/admin-daily-briefing-flow";
 import { toast } from "@/hooks/use-toast";
@@ -99,6 +100,50 @@ export function AdminView({
   useEffect(() => {
     generateBriefing();
   }, [tasks.length, leaveRequests.length]);
+
+  // Automated Deadline Reminders Logic
+  useEffect(() => {
+    if (!tasks || tasks.length === 0) return;
+
+    const checkDeadlinesAndRemind = () => {
+      const now = new Date();
+      const oneDayInMs = 24 * 60 * 60 * 1000;
+      const tomorrow = new Date(now.getTime() + oneDayInMs);
+
+      tasks.forEach(task => {
+        // Only remind for incomplete tasks
+        if (task.status === 'completed' || task.status === 'canceled') return;
+        if (!task.dueDate) return;
+
+        const dueDate = new Date(task.dueDate);
+        
+        // If due within the next 24 hours
+        if (dueDate > now && dueDate <= tomorrow) {
+          const reminderId = `deadline-reminder-${task.id}`;
+          
+          const notifData = {
+            id: reminderId,
+            recipientEmployeeId: task.assignedToEmployeeId,
+            message: `URGENT: Your task "${task.title}" is due within 24 hours (${task.dueDate}).`,
+            type: 'task_reminder',
+            isRead: false,
+            createdAt: new Date().toISOString(),
+            relatedEntityId: task.id,
+            relatedEntityType: 'Task'
+          };
+
+          // Use deterministic ID to prevent multiple reminders for the same task
+          setDocumentNonBlocking(
+            doc(db, 'employees', task.assignedToEmployeeId, 'notifications', reminderId),
+            notifData,
+            { merge: true }
+          );
+        }
+      });
+    };
+
+    checkDeadlinesAndRemind();
+  }, [tasks, db]);
 
   const generateBriefing = async () => {
     if (isGeneratingBriefing) return;
