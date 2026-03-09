@@ -59,6 +59,7 @@ interface AdminViewProps {
   onAssignTask: (task: any) => void;
   onUpdateTaskStatus: (id: string, status: Task['status']) => void;
   onDeleteTask: (id: string) => void;
+  onDeleteEmployee: (id: string) => void;
 }
 
 export function AdminView({ 
@@ -70,7 +71,8 @@ export function AdminView({
   onUpdateLeave, 
   onAssignTask,
   onUpdateTaskStatus,
-  onDeleteTask
+  onDeleteTask,
+  onDeleteEmployee
 }: AdminViewProps) {
   const db = useFirestore();
   const [briefing, setBriefing] = useState<AdminDailyBriefingOutput | null>(null);
@@ -305,10 +307,15 @@ export function AdminView({
                               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-[10px] md:text-xs">Active</Badge>
                             </TableCell>
                             <TableCell className="text-right">
-                              <Button size="sm" variant="outline" className="rounded-lg h-8 px-2 md:px-3 text-xs gap-1 md:gap-2 hover:bg-primary hover:text-white" onClick={() => setSelectedEmployee(emp)}>
-                                <LayoutDashboard className="h-3 w-3" />
-                                <span className="hidden xs:inline">Manage</span>
-                              </Button>
+                              <div className="flex gap-2 justify-end">
+                                <Button size="sm" variant="outline" className="rounded-lg h-8 px-2 md:px-3 text-xs gap-1 md:gap-2 hover:bg-primary hover:text-white" onClick={() => setSelectedEmployee(emp)}>
+                                  <LayoutDashboard className="h-3 w-3" />
+                                  <span className="hidden xs:inline">Manage</span>
+                                </Button>
+                                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10" onClick={() => onDeleteEmployee(emp.id)}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}

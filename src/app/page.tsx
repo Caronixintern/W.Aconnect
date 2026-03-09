@@ -222,6 +222,11 @@ export default function Home() {
     toast({ title: "Task Deleted", description: "The work item has been removed." });
   };
 
+  const deleteEmployee = (id: string) => {
+    deleteDocumentNonBlocking(doc(db, 'employees', id));
+    toast({ title: "Account Removed", description: "The employee record has been deleted from the organization." });
+  };
+
   const requestLeave = (leaveData: any) => {
     const leaveId = `leave-${Date.now()}`;
     const fullLeave = {
@@ -312,6 +317,7 @@ export default function Home() {
               onAssignTask={assignTask}
               onUpdateTaskStatus={updateTaskStatus}
               onDeleteTask={deleteTask}
+              onDeleteEmployee={deleteEmployee}
             />
           ) : (
             <EmployeeView 
