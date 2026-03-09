@@ -29,10 +29,6 @@ import { doc, collection, query } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 import Image from "next/image";
 
-/**
- * WonderlightAdventure Root Application
- * Managed with Next.js 15 asynchronous APIs.
- */
 export default function Home() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
@@ -65,11 +61,9 @@ export default function Home() {
   const { data: adminProfile, isLoading: isAdminLoading } = useDoc(adminProfileRef);
   const { data: employeeProfile, isLoading: isEmployeeLoading } = useDoc(employeeProfileRef);
 
-  // Queries for All Users (Allowed by Rules)
   const employeesQuery = useMemoFirebase(() => user ? query(collection(db, 'employees')) : null, [db, user]);
   const { data: employeesData } = useCollection(employeesQuery);
 
-  // Queries for Admins Only (Restricted by Rules)
   const adminsQuery = useMemoFirebase(() => (user && isAdminAccount) ? query(collection(db, 'admins')) : null, [db, user, isAdminAccount]);
   const masterLeavesQuery = useMemoFirebase(() => (user && isAdminAccount) ? query(collection(db, 'leaveRequests')) : null, [db, user, isAdminAccount]);
   const masterTasksQuery = useMemoFirebase(() => (user && isAdminAccount) ? query(collection(db, 'tasks')) : null, [db, user, isAdminAccount]);
@@ -78,7 +72,6 @@ export default function Home() {
   const { data: masterLeaves } = useCollection(masterLeavesQuery);
   const { data: masterTasks } = useCollection(masterTasksQuery);
 
-  // Queries for Employees Only (Own Data)
   const employeeLeavesQuery = useMemoFirebase(() => (user && !isAdminAccount) ? query(collection(db, 'employees', user.uid, 'leaveRequests')) : null, [db, user, isAdminAccount]);
   const employeeTasksQuery = useMemoFirebase(() => (user && !isAdminAccount) ? query(collection(db, 'employees', user.uid, 'tasks')) : null, [db, user, isAdminAccount]);
   const employeeAttendanceQuery = useMemoFirebase(() => (user && !isAdminAccount) ? query(collection(db, 'employees', user.uid, 'attendance')) : null, [db, user, isAdminAccount]);
@@ -159,7 +152,6 @@ export default function Home() {
     updateDocumentNonBlocking(doc(db, 'leaveRequests', id), updateData);
     updateDocumentNonBlocking(doc(db, 'employees', leave.employeeId, 'leaveRequests', id), updateData);
     
-    // Create notification for employee
     const notifId = `notif-${Date.now()}`;
     const notifData = {
       id: notifId,
@@ -189,7 +181,6 @@ export default function Home() {
     setDocumentNonBlocking(doc(db, 'tasks', taskId), fullTask, { merge: true });
     setDocumentNonBlocking(doc(db, 'employees', taskData.assignedToEmployeeId, 'tasks', taskId), fullTask, { merge: true });
 
-    // Notify employee
     const notifId = `notif-${Date.now()}`;
     const notifData = {
       id: notifId,
@@ -243,7 +234,6 @@ export default function Home() {
     setDocumentNonBlocking(doc(db, 'leaveRequests', leaveId), fullLeave, { merge: true });
     setDocumentNonBlocking(doc(db, 'employees', user?.uid!, 'leaveRequests', leaveId), fullLeave, { merge: true });
 
-    // Notify all admins
     (adminsData || []).forEach(admin => {
       const notifId = `notif-${Date.now()}-${admin.id}`;
       const notifData = {
@@ -338,17 +328,17 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen gold-gradient flex flex-col items-center justify-center p-6 bg-fixed bg-cover">
-      <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-        <div className="text-white space-y-6">
-          <div className="w-24 h-24 rounded-full overflow-hidden shadow-2xl relative border-2 border-white/30 bg-white">
+    <div className="min-h-screen gold-gradient flex flex-col items-center justify-center p-4 md:p-6 bg-fixed bg-cover overflow-x-hidden">
+      <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center py-8">
+        <div className="text-white space-y-4 md:space-y-6 text-center md:text-left">
+          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-2xl relative border-2 border-white/30 bg-white mx-auto md:mx-0">
             <Image src="https://img.sanishtech.com/u/ceb6a7135c1691ad1881a0eaea4200e9.jpg" alt="Logo" fill className="object-cover" />
           </div>
-          <h1 className="text-6xl font-black tracking-tight leading-tight">Wonderlight<br/><span className="text-accent">Adventure</span></h1>
-          <p className="text-xl text-white/80 max-w-md">The pinnacle of luxury office management systems. Experience seamless coordination and executive oversight.</p>
+          <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-tight">Wonderlight<br/><span className="text-accent">Adventure</span></h1>
+          <p className="text-lg md:text-xl text-white/80 max-w-md mx-auto md:mx-0">The pinnacle of luxury office management systems. Experience seamless coordination and executive oversight.</p>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6 w-full max-w-md mx-auto">
           {authMode === 'admin-login' ? (
             <Card className="border-none luxury-shadow backdrop-blur-2xl bg-white/90 animate-in fade-in slide-in-from-bottom-2">
               <CardHeader>
@@ -381,7 +371,7 @@ export default function Home() {
                       <div className="p-3 bg-primary/10 rounded-2xl text-primary"><ShieldCheck className="h-6 w-6" /></div>
                       <div>
                         <CardTitle className="text-xl">Executive Portal</CardTitle>
-                        <CardDescription>Administrative controls and oversight</CardDescription>
+                        <CardDescription>Oversight controls</CardDescription>
                       </div>
                     </div>
                   </CardHeader>
@@ -400,7 +390,7 @@ export default function Home() {
                     <div className="p-3 bg-accent/10 rounded-2xl text-accent-foreground"><UserCircle2 className="h-6 w-6" /></div>
                     <div>
                       <CardTitle className="text-xl">Employee Lounge</CardTitle>
-                      <CardDescription>Personal dashboard and team sync</CardDescription>
+                      <CardDescription>Personal dashboard</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
@@ -423,16 +413,16 @@ export default function Home() {
                       {authMode === 'employee-signup' && (
                         <div className="space-y-2">
                           <Label>Full Name</Label>
-                          <Input type="text" value={name} onChange={setName} placeholder="Julian Sterling" />
+                          <Input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Julian Sterling" />
                         </div>
                       )}
                       <div className="space-y-2">
                         <Label>Email</Label>
-                        <Input type="email" value={email} onChange={setEmail} placeholder="employee@wonderlight.com" />
+                        <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="employee@wonderlight.com" />
                       </div>
                       <div className="space-y-2">
                         <Label>Password</Label>
-                        <Input type="password" value={password} onChange={setPassword} />
+                        <Input type="password" value={password} onChange={e => setPassword(e.target.value)} />
                       </div>
                       <div className="grid grid-cols-2 gap-3 pt-2">
                         <Button onClick={() => handleAuth(authMode === 'employee-signup' ? 'signup' : 'signin', 'employee')} disabled={isProcessing} className="w-full h-11">
@@ -448,7 +438,7 @@ export default function Home() {
           )}
         </div>
       </div>
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/50 text-sm">
+      <div className="md:absolute bottom-8 left-1/2 md:-translate-x-1/2 text-white/50 text-xs md:text-sm text-center py-4">
         &copy; 2024 WonderlightAdventure Luxury Systems. All rights reserved.
       </div>
     </div>

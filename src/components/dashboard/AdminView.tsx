@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { 
   Users, 
   CalendarCheck, 
@@ -176,14 +177,14 @@ export function AdminView({
 
   if (selectedEmployee) {
     return (
-      <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => setSelectedEmployee(null)} className="rounded-full">
+      <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 overflow-x-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => setSelectedEmployee(null)} className="rounded-full h-10 w-10 shrink-0">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Managing Dashboard: {selectedEmployee.name}</h1>
-            <p className="text-muted-foreground text-sm">Executive Proxy Mode enabled.</p>
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight truncate">Managing: {selectedEmployee.name}</h1>
+            <p className="text-muted-foreground text-xs md:text-sm">Executive Proxy Mode enabled.</p>
           </div>
         </div>
         <EmployeeView 
@@ -200,81 +201,53 @@ export function AdminView({
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 overflow-x-hidden">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-primary">Executive Console</h1>
-          <p className="text-muted-foreground">Comprehensive oversight and strategic resource management.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary">Executive Console</h1>
+          <p className="text-xs md:text-base text-muted-foreground">Comprehensive oversight and strategic resource management.</p>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={generateBriefing} disabled={isGeneratingBriefing} variant="outline" className="rounded-xl luxury-shadow hover:bg-primary/5">
-            <Sparkles className={cn("mr-2 h-4 w-4 text-accent", isGeneratingBriefing && "animate-spin")} />
-            Generate AI Intelligence
-          </Button>
-        </div>
+        <Button onClick={generateBriefing} disabled={isGeneratingBriefing} variant="outline" className="w-full md:w-auto rounded-xl luxury-shadow hover:bg-primary/5 h-11">
+          <Sparkles className={cn("mr-2 h-4 w-4 text-accent", isGeneratingBriefing && "animate-spin")} />
+          Generate AI Intelligence
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="border-none luxury-shadow glass-card">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Staff</p>
-                <h3 className="text-3xl font-bold">{employees.length}</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        {[
+          { label: 'Total Staff', value: employees.length, icon: Users, bg: 'bg-primary/10', text: 'text-primary' },
+          { label: 'Pending Approval', value: pendingLeaves.length, icon: CalendarCheck, bg: 'bg-accent/10', text: 'text-accent-foreground' },
+          { label: 'Active Tasks', value: tasks.filter(t => t.status !== 'completed').length, icon: ClipboardList, bg: 'bg-green-50', text: 'text-green-600' },
+          { label: 'Efficiency Index', value: `${(tasks.length > 0 ? (tasks.filter(t => t.status === 'completed').length / tasks.length * 100).toFixed(0) : 0)}%`, icon: TrendingUp, bg: 'bg-orange-50', text: 'text-orange-600' }
+        ].map((stat, i) => (
+          <Card key={i} className="border-none luxury-shadow glass-card">
+            <CardContent className="pt-4 md:pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs md:text-sm text-muted-foreground">{stat.label}</p>
+                  <h3 className="text-2xl md:text-3xl font-bold">{stat.value}</h3>
+                </div>
+                <div className={cn("p-2 md:p-3 rounded-xl", stat.bg, stat.text)}><stat.icon className="h-5 w-5 md:h-6 md:w-6" /></div>
               </div>
-              <div className="p-3 bg-primary/10 rounded-xl text-primary"><Users className="h-6 w-6" /></div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-none luxury-shadow glass-card">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Pending Approval</p>
-                <h3 className="text-3xl font-bold">{pendingLeaves.length}</h3>
-              </div>
-              <div className="p-3 bg-accent/10 rounded-xl text-accent-foreground"><CalendarCheck className="h-6 w-6" /></div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-none luxury-shadow glass-card">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Active Tasks</p>
-                <h3 className="text-3xl font-bold">{tasks.filter(t => t.status !== 'completed').length}</h3>
-              </div>
-              <div className="p-3 bg-green-50 rounded-xl text-green-600"><ClipboardList className="h-6 w-6" /></div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-none luxury-shadow glass-card">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Efficiency Index</p>
-                <h3 className="text-3xl font-bold">{(tasks.length > 0 ? (tasks.filter(t => t.status === 'completed').length / tasks.length * 100).toFixed(0) : 0)}%</h3>
-              </div>
-              <div className="p-3 bg-orange-50 rounded-xl text-orange-600"><TrendingUp className="h-6 w-6" /></div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+        <div className="lg:col-span-2 space-y-6 md:space-y-8 min-w-0">
           {briefing && (
             <Card className="border-none bg-primary/5 luxury-shadow overflow-hidden">
               <div className="h-1 gold-gradient w-full" />
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-primary">
+              <CardHeader className="p-4 md:p-6">
+                <CardTitle className="flex items-center gap-2 text-primary text-lg md:text-xl">
                   <Sparkles className="h-5 w-5 text-accent" />
                   Executive Intelligence Summary
                 </CardTitle>
-                <CardDescription>AI-generated priorities and critical updates.</CardDescription>
+                <CardDescription className="text-xs md:text-sm">AI-generated priorities and critical updates.</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap">
+              <CardContent className="p-4 md:p-6 pt-0 md:pt-0">
+                <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap text-xs md:text-sm leading-relaxed">
                   {briefing.briefingText}
                 </div>
               </CardContent>
@@ -282,272 +255,254 @@ export function AdminView({
           )}
 
           <Tabs defaultValue="employees" className="w-full">
-            <TabsList className="bg-white/50 luxury-shadow p-1 rounded-xl">
-              <TabsTrigger value="employees" className="rounded-lg">Staff Directory</TabsTrigger>
-              <TabsTrigger value="leaves" className="rounded-lg">Leave Requests</TabsTrigger>
-              <TabsTrigger value="tasks" className="rounded-lg">Active Projects</TabsTrigger>
-              <TabsTrigger value="profile" className="rounded-lg">My Portfolio</TabsTrigger>
-            </TabsList>
+            <ScrollArea className="w-full pb-2">
+              <TabsList className="bg-white/50 luxury-shadow p-1 rounded-xl w-full sm:w-auto h-auto min-h-12 flex sm:inline-flex">
+                <TabsTrigger value="employees" className="rounded-lg flex-1 sm:flex-none py-2">Directory</TabsTrigger>
+                <TabsTrigger value="leaves" className="rounded-lg flex-1 sm:flex-none py-2">Requests</TabsTrigger>
+                <TabsTrigger value="tasks" className="rounded-lg flex-1 sm:flex-none py-2">Tasks</TabsTrigger>
+                <TabsTrigger value="profile" className="rounded-lg flex-1 sm:flex-none py-2">Me</TabsTrigger>
+              </TabsList>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
 
-            <TabsContent value="employees" className="mt-6">
-              <Card className="border-none luxury-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="relative flex-1">
+            <TabsContent value="employees" className="mt-4 md:mt-6">
+              <Card className="border-none luxury-shadow overflow-hidden">
+                <CardContent className="p-0 sm:p-6 pt-6">
+                  <div className="px-4 sm:px-0 mb-4 sm:mb-6">
+                    <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input placeholder="Search staff members..." className="pl-10 h-11 rounded-xl" />
+                      <Input placeholder="Search staff..." className="pl-10 h-11 rounded-xl" />
                     </div>
                   </div>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Professional Profile</TableHead>
-                        <TableHead>Division</TableHead>
-                        <TableHead>Contact</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {employees.map(emp => (
-                        <TableRow key={emp.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-muted overflow-hidden border-2 border-primary/10">
-                                <img src={emp.avatarUrl} alt="" className="w-full h-full object-cover" />
-                              </div>
-                              <div>
-                                <p className="font-semibold">{emp.name}</p>
-                                <p className="text-[10px] text-muted-foreground font-mono">{emp.id}</p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{emp.team}</TableCell>
-                          <TableCell>
-                            <p className="text-xs">{emp.email}</p>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Active</Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button size="sm" variant="outline" className="rounded-lg h-8 gap-2 hover:bg-primary hover:text-white transition-all" onClick={() => setSelectedEmployee(emp)}>
-                              <LayoutDashboard className="h-3 w-3" />
-                              Manage
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="leaves" className="mt-6">
-              <Card className="border-none luxury-shadow">
-                <CardContent className="pt-6">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Employee</TableHead>
-                        <TableHead>Requested Dates</TableHead>
-                        <TableHead>Justification</TableHead>
-                        <TableHead className="text-right">Decision</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {pendingLeaves.length === 0 ? (
+                  <ScrollArea className="w-full">
+                    <Table>
+                      <TableHeader>
                         <TableRow>
-                          <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">No pending leave requests at this time.</TableCell>
+                          <TableHead className="min-w-[180px]">Profile</TableHead>
+                          <TableHead className="hidden sm:table-cell">Division</TableHead>
+                          <TableHead className="hidden md:table-cell">Contact</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Action</TableHead>
                         </TableRow>
-                      ) : (
-                        pendingLeaves.map(leave => (
-                          <TableRow key={leave.id}>
-                            <TableCell className="font-semibold">
-                              {users.find(u => u.id === leave.employeeId)?.name || 'Unknown'}
-                            </TableCell>
-                            <TableCell className="text-xs whitespace-nowrap">{leave.startDate} to {leave.endDate}</TableCell>
-                            <TableCell className="max-w-[200px] truncate">{leave.reason}</TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex gap-2 justify-end">
-                                <Button size="sm" className="h-8 rounded-lg bg-green-500 hover:bg-green-600" onClick={() => onUpdateLeave(leave.id, 'approved')}>
-                                  <CheckCircle2 className="h-4 w-4" />
-                                </Button>
-                                <Button size="sm" className="h-8 rounded-lg" variant="destructive" onClick={() => onUpdateLeave(leave.id, 'rejected')}>
-                                  <XCircle className="h-4 w-4" />
-                                </Button>
+                      </TableHeader>
+                      <TableBody>
+                        {employees.map(emp => (
+                          <TableRow key={emp.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-2 md:gap-3">
+                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-muted overflow-hidden border-2 border-primary/10 shrink-0">
+                                  <img src={emp.avatarUrl} alt="" className="w-full h-full object-cover" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-xs md:text-sm truncate">{emp.name}</p>
+                                  <p className="text-[10px] text-muted-foreground font-mono truncate">{emp.id.substring(0,8)}...</p>
+                                </div>
                               </div>
+                            </TableCell>
+                            <TableCell className="hidden sm:table-cell text-xs">{emp.team}</TableCell>
+                            <TableCell className="hidden md:table-cell text-xs">{emp.email}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-[10px] md:text-xs">Active</Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button size="sm" variant="outline" className="rounded-lg h-8 px-2 md:px-3 text-xs gap-1 md:gap-2 hover:bg-primary hover:text-white" onClick={() => setSelectedEmployee(emp)}>
+                                <LayoutDashboard className="h-3 w-3" />
+                                <span className="hidden xs:inline">Manage</span>
+                              </Button>
                             </TableCell>
                           </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    <ScrollBar orientation="horizontal" />
+                  </ScrollArea>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            <TabsContent value="tasks" className="mt-6">
+            <TabsContent value="leaves" className="mt-4 md:mt-6">
               <Card className="border-none luxury-shadow">
-                <CardContent className="pt-6">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Task Title</TableHead>
-                        <TableHead>Assignee</TableHead>
-                        <TableHead>Due Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Manage</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {tasks.length === 0 ? (
+                <CardContent className="p-0 sm:p-6 pt-6">
+                  <ScrollArea className="w-full">
+                    <Table>
+                      <TableHeader>
                         <TableRow>
-                          <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">No tasks assigned yet.</TableCell>
+                          <TableHead>Employee</TableHead>
+                          <TableHead>Dates</TableHead>
+                          <TableHead className="hidden sm:table-cell">Reason</TableHead>
+                          <TableHead className="text-right">Decision</TableHead>
                         </TableRow>
-                      ) : (
-                        tasks.map(task => (
-                          <TableRow key={task.id}>
-                            <TableCell className="font-semibold">{task.title}</TableCell>
-                            <TableCell>{users.find(u => u.id === task.assignedToEmployeeId)?.name || 'Unknown'}</TableCell>
-                            <TableCell className="text-xs">{task.dueDate}</TableCell>
-                            <TableCell>
-                              <Badge variant={task.status === 'completed' ? 'default' : 'outline'}>{task.status.toUpperCase()}</Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex gap-2 justify-end">
+                      </TableHeader>
+                      <TableBody>
+                        {pendingLeaves.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">No pending requests.</TableCell>
+                          </TableRow>
+                        ) : (
+                          pendingLeaves.map(leave => (
+                            <TableRow key={leave.id}>
+                              <TableCell className="font-semibold text-xs md:text-sm">
+                                {users.find(u => u.id === leave.employeeId)?.name || 'Unknown'}
+                              </TableCell>
+                              <TableCell className="text-[10px] md:text-xs whitespace-nowrap">{leave.startDate} to {leave.endDate}</TableCell>
+                              <TableCell className="hidden sm:table-cell text-xs max-w-[150px] truncate">{leave.reason}</TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex gap-1 md:gap-2 justify-end">
+                                  <Button size="sm" className="h-7 w-7 md:h-8 md:w-8 p-0 md:p-1 rounded-lg bg-green-500" onClick={() => onUpdateLeave(leave.id, 'approved')}>
+                                    <CheckCircle2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                                  </Button>
+                                  <Button size="sm" className="h-7 w-7 md:h-8 md:w-8 p-0 md:p-1 rounded-lg" variant="destructive" onClick={() => onUpdateLeave(leave.id, 'rejected')}>
+                                    <XCircle className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                    <ScrollBar orientation="horizontal" />
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="tasks" className="mt-4 md:mt-6">
+              <Card className="border-none luxury-shadow">
+                <CardContent className="p-0 sm:p-6 pt-6">
+                  <ScrollArea className="w-full">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="min-w-[120px]">Task</TableHead>
+                          <TableHead className="hidden sm:table-cell">Assignee</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Action</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {tasks.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={4} className="h-32 text-center text-muted-foreground text-xs">No tasks yet.</TableCell>
+                          </TableRow>
+                        ) : (
+                          tasks.map(task => (
+                            <TableRow key={task.id}>
+                              <TableCell className="font-semibold text-xs md:text-sm">{task.title}</TableCell>
+                              <TableCell className="hidden sm:table-cell text-xs">{users.find(u => u.id === task.assignedToEmployeeId)?.name || 'Unknown'}</TableCell>
+                              <TableCell>
+                                <Badge variant={task.status === 'completed' ? 'default' : 'outline'} className="text-[9px] md:text-[10px]">{task.status.toUpperCase()}</Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8">
                                       <MoreHorizontal className="h-4 w-4" />
                                     </Button>
                                   </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Change Status</DropdownMenuLabel>
+                                  <DropdownMenuContent align="end" className="w-40">
                                     <DropdownMenuItem onClick={() => onUpdateTaskStatus(task.id, 'todo')}>To Do</DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => onUpdateTaskStatus(task.id, 'in-progress')}>In Progress</DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => onUpdateTaskStatus(task.id, 'completed')}>Completed</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => onUpdateTaskStatus(task.id, 'canceled')}>Canceled</DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => onDeleteTask(task.id)} className="text-destructive">
-                                      <Trash2 className="h-4 w-4 mr-2" />
-                                      Delete Task
-                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => onDeleteTask(task.id)} className="text-destructive">Delete</DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                    <ScrollBar orientation="horizontal" />
+                  </ScrollArea>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            <TabsContent value="profile" className="mt-6 space-y-6">
+            <TabsContent value="profile" className="mt-4 md:mt-6">
               <Card className="border-none luxury-shadow overflow-hidden glass-card">
-                <div className="h-32 gold-gradient relative">
-                  <div className="absolute -bottom-12 left-8">
+                <div className="h-24 md:h-32 gold-gradient relative">
+                  <div className="absolute -bottom-10 md:-bottom-12 left-4 md:left-8">
                     <div className="p-1 bg-white rounded-2xl luxury-shadow">
-                      <div className="w-24 h-24 rounded-xl overflow-hidden relative border-2 border-white">
+                      <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden relative border-2 border-white">
                         <img src={currentUser.avatarUrl} alt={currentUser.name} className="w-full h-full object-cover" />
                       </div>
                     </div>
                   </div>
-                  <div className="absolute top-4 right-4">
-                    <Button 
-                      variant="secondary" 
-                      size="sm" 
-                      className="rounded-full bg-white/20 backdrop-blur-md border-white/30 text-white hover:bg-white/40"
-                      onClick={() => setIsEditingProfile(!isEditingProfile)}
-                    >
-                      <UserCog className="h-4 w-4 mr-2" />
-                      {isEditingProfile ? "Cancel" : "Edit Credentials"}
-                    </Button>
-                  </div>
                 </div>
-                <CardContent className="pt-16 pb-8 px-8">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b pb-8 mb-8">
-                    <div className="space-y-1 w-full max-w-md">
+                <CardContent className="pt-12 md:pt-16 pb-6 md:pb-8 px-4 md:px-8">
+                  <div className="flex flex-col gap-4 border-b pb-6 mb-6">
+                    <div className="space-y-1">
                       {isEditingProfile ? (
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest">Executive Name</Label>
-                            <input 
-                              value={profileForm.name} 
-                              onChange={e => setProfileForm({...profileForm, name: e.target.value})}
-                              className="text-xl font-bold h-11 w-full bg-white/50 border rounded-md px-3"
-                            />
+                        <div className="space-y-3">
+                          <div className="space-y-1">
+                            <Label className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest">Name</Label>
+                            <Input value={profileForm.name} onChange={e => setProfileForm({...profileForm, name: e.target.value})} className="h-10 text-sm" />
                           </div>
-                          <div className="space-y-2">
+                          <div className="space-y-1">
                             <Label className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest">Avatar URL</Label>
-                            <div className="relative">
-                              <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input 
-                                value={profileForm.avatarUrl} 
-                                onChange={e => setProfileForm({...profileForm, avatarUrl: e.target.value})}
-                                className="pl-10 h-10 bg-white/50"
-                              />
-                            </div>
+                            <Input value={profileForm.avatarUrl} onChange={e => setProfileForm({...profileForm, avatarUrl: e.target.value})} className="h-10 text-sm" />
                           </div>
                         </div>
                       ) : (
                         <>
-                          <h2 className="text-3xl font-bold tracking-tight text-primary">{currentUser.name}</h2>
-                          <div className="flex items-center gap-2 text-muted-foreground mt-2">
-                            <Shield className="h-4 w-4 text-accent" />
-                            <Badge variant="outline" className="text-primary border-primary/20">Authorized Executive</Badge>
+                          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-primary">{currentUser.name}</h2>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Shield className="h-3.5 w-3.5 text-accent" />
+                            <Badge variant="outline" className="text-[10px] text-primary border-primary/20">Executive</Badge>
                           </div>
                         </>
                       )}
                     </div>
-                    {isEditingProfile && (
-                      <Button onClick={handleSaveProfile} className="w-full md:w-auto luxury-shadow">
-                        Synchronize Profile
-                      </Button>
-                    )}
+                    <div className="flex gap-2 w-full">
+                      {isEditingProfile ? (
+                        <>
+                          <Button onClick={handleSaveProfile} className="flex-1 h-10 text-sm">Save Sync</Button>
+                          <Button variant="outline" onClick={() => setIsEditingProfile(false)} className="h-10 text-sm">Cancel</Button>
+                        </>
+                      ) : (
+                        <Button variant="outline" size="sm" onClick={() => setIsEditingProfile(true)} className="w-full md:w-auto rounded-xl">
+                          <UserCog className="h-4 w-4 mr-2" />
+                          Edit Profile
+                        </Button>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-6">
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 bg-muted rounded-xl text-primary"><Mail className="h-5 w-5" /></div>
-                        <div>
-                          <p className="text-xs text-muted-foreground uppercase font-bold tracking-tighter">Professional Email</p>
-                          <p className="font-semibold">{currentUser.email}</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-muted rounded-xl text-primary"><Mail className="h-4 w-4" /></div>
+                        <div className="min-w-0">
+                          <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">Email</p>
+                          <p className="font-semibold text-xs md:text-sm truncate">{currentUser.email}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 bg-muted rounded-xl text-primary"><Phone className="h-5 w-5" /></div>
-                        <div>
-                          <p className="text-xs text-muted-foreground uppercase font-bold tracking-tighter">Secure Line</p>
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-muted rounded-xl text-primary"><Phone className="h-4 w-4" /></div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">Phone</p>
                           {isEditingProfile ? (
-                            <Input 
-                              value={profileForm.phone} 
-                              onChange={e => setProfileForm({...profileForm, phone: e.target.value})}
-                              className="h-9 mt-1 bg-white/50"
-                            />
+                            <Input value={profileForm.phone} onChange={e => setProfileForm({...profileForm, phone: e.target.value})} className="h-8 text-xs mt-1" />
                           ) : (
-                            <p className="font-semibold">{currentUser.phone || 'Not configured'}</p>
+                            <p className="font-semibold text-xs md:text-sm">{currentUser.phone || 'N/A'}</p>
                           )}
                         </div>
                       </div>
                     </div>
                     <Card className="bg-muted/30 border-none">
-                      <CardContent className="pt-6">
-                        <h4 className="text-sm font-bold flex items-center gap-2 mb-4">
-                          <Activity className="h-4 w-4 text-primary" />
-                          Management Activity
+                      <CardContent className="p-4">
+                        <h4 className="text-xs font-bold flex items-center gap-2 mb-3">
+                          <Activity className="h-3.5 w-3.5 text-primary" />
+                          Management
                         </h4>
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="text-muted-foreground">Delegated Tasks</span>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center text-[10px] md:text-xs">
+                            <span className="text-muted-foreground">Tasks</span>
                             <span className="font-bold">{tasks.length}</span>
                           </div>
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="text-muted-foreground">Decisions Pending</span>
+                          <div className="flex justify-between items-center text-[10px] md:text-xs">
+                            <span className="text-muted-foreground">Pending</span>
                             <span className="font-bold text-accent-foreground">{pendingLeaves.length}</span>
                           </div>
                         </div>
@@ -560,27 +515,23 @@ export function AdminView({
           </Tabs>
         </div>
 
-        <div className="space-y-8">
+        <div className="space-y-6 md:space-y-8">
           <Card className="border-none luxury-shadow h-fit">
-            <CardHeader>
-              <CardTitle>Delegate Responsibility</CardTitle>
-              <CardDescription>Assign new tasks to team members.</CardDescription>
+            <CardHeader className="p-4 md:p-6">
+              <CardTitle className="text-lg">Delegate Responsibility</CardTitle>
+              <CardDescription className="text-xs">Assign tasks to staff members.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 md:p-6 pt-0 md:pt-0">
               <form onSubmit={handleTaskSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Task Title</Label>
-                  <Input 
-                    placeholder="e.g. Q3 Strategic Sync" 
-                    value={taskForm.title}
-                    onChange={e => setTaskForm({...taskForm, title: e.target.value})}
-                  />
+                  <Label className="text-xs">Task Title</Label>
+                  <Input placeholder="Sync objectives..." value={taskForm.title} onChange={e => setTaskForm({...taskForm, title: e.target.value})} className="h-10 text-sm" />
                 </div>
                 <div className="space-y-2">
-                  <Label>Assignee</Label>
+                  <Label className="text-xs">Assignee</Label>
                   <Select onValueChange={v => setTaskForm({...taskForm, assignedToEmployeeId: v})} value={taskForm.assignedToEmployeeId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select staff member" />
+                    <SelectTrigger className="h-10 text-sm">
+                      <SelectValue placeholder="Select staff" />
                     </SelectTrigger>
                     <SelectContent>
                       {employees.map(emp => (
@@ -589,36 +540,28 @@ export function AdminView({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label>Deadline</Label>
-                    <Input 
-                      type="date"
-                      value={taskForm.dueDate}
-                      onChange={e => setTaskForm({...taskForm, dueDate: e.target.value})}
-                    />
+                    <Label className="text-xs">Deadline</Label>
+                    <Input type="date" value={taskForm.dueDate} onChange={e => setTaskForm({...taskForm, dueDate: e.target.value})} className="h-10 text-sm px-2" />
                   </div>
                   <div className="space-y-2">
-                    <Label>Priority</Label>
+                    <Label className="text-xs">Priority</Label>
                     <Select onValueChange={v => setTaskForm({...taskForm, priority: v})} value={taskForm.priority}>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-10 text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="medium">Med</SelectItem>
                         <SelectItem value="high">High</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Objectives</Label>
-                  <Textarea 
-                    placeholder="Brief description of project goals..." 
-                    value={taskForm.description}
-                    onChange={e => setTaskForm({...taskForm, description: e.target.value})}
-                  />
+                  <Label className="text-xs">Objectives</Label>
+                  <Textarea placeholder="Project details..." value={taskForm.description} onChange={e => setTaskForm({...taskForm, description: e.target.value})} className="min-h-[80px] text-sm" />
                 </div>
                 <Button type="submit" className="w-full h-11 rounded-xl shadow-lg">
                   Assign Responsibility
